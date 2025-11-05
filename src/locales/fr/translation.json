@@ -1,0 +1,35 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "retry": "Réessayer"
+  },
+  "nav": {
+    "language": "Langue",
+    "switchToFrench": "Français",
+    "switchToEnglish": "English"
+  },
+  "welcome": {
+    "title": "Bienvenue à {{productName}}",
+    "subtitle": "Votre voyage commence ici"
+  },
+  "unboxing": {
+    "hero": "Découvrez l'Innovation",
+    "explore": "Commencer à Explorer",
+    "gettingStarted": "Pour Commencer"
+  },
+  "support": {
+    "title": "Bon Retour",
+    "features": "Explorer les Fonctionnalités",
+    "faq": "Questions Fréquemment Posées",
+    "help": "Besoin d'Aide?",
+    "register": "Enregistrez Votre Appareil"
+  },
+  "errors": {
+    "invalidUnit": "Code produit invalide. Veuillez vérifier votre étiquette NFC.",
+    "invalidProductOrCampaign": "Produit ou campagne invalide. Veuillez vérifier votre étiquette NFC.",
+    "missingParams": "Paramètres requis manquants.",
+    "networkError": "Erreur de connexion. Veuillez vérifier votre connexion Internet.",
+    "notFound": "Page non trouvée"
+  }
+}

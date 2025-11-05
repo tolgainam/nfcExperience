@@ -1,0 +1,35 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Try again"
+  },
+  "nav": {
+    "language": "Language",
+    "switchToFrench": "Français",
+    "switchToEnglish": "English"
+  },
+  "welcome": {
+    "title": "Welcome to {{productName}}",
+    "subtitle": "Your journey begins here"
+  },
+  "unboxing": {
+    "hero": "Experience Innovation",
+    "explore": "Start Exploring",
+    "gettingStarted": "Getting Started"
+  },
+  "support": {
+    "title": "Welcome Back",
+    "features": "Explore Features",
+    "faq": "Frequently Asked Questions",
+    "help": "Need Help?",
+    "register": "Register Your Device"
+  },
+  "errors": {
+    "invalidUnit": "Invalid product code. Please check your NFC tag.",
+    "invalidProductOrCampaign": "Invalid product or campaign. Please check your NFC tag.",
+    "missingParams": "Missing required parameters.",
+    "networkError": "Connection error. Please check your internet connection.",
+    "notFound": "Page not found"
+  }
+}
