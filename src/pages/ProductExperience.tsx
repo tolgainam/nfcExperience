@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { getFingerprint } from '../lib/fingerprint'
 import { parseNFCParams, areParamsValid } from '../lib/urlParams'
 import { useCampaignTheme } from '../hooks/useCampaignTheme'
+import UnboxingExperience from '../components/UnboxingExperience'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { UnitWithRelations } from '../types/database'
 
 export default function ProductExperience() {
@@ -16,6 +18,7 @@ export default function ProductExperience() {
   const [error, setError] = useState<string | null>(null)
   const [unitData, setUnitData] = useState<UnitWithRelations | null>(null)
   const [isFirstScan, setIsFirstScan] = useState(true)
+  const hasLoadedRef = useRef<string | null>(null)
 
   // Parse URL parameters
   const params = parseNFCParams(lang, brand, searchParams)
@@ -24,7 +27,18 @@ export default function ProductExperience() {
   useCampaignTheme(unitData?.campaigns || null)
 
   useEffect(() => {
+    // Create a unique key for this load
+    const loadKey = `${params.uid}-${params.prd}-${params.cc}`
+
+    // Prevent multiple executions for the same product
+    if (hasLoadedRef.current === loadKey) {
+      console.log('Already loaded, skipping...')
+      return
+    }
+
     async function loadProductExperience() {
+      console.log('Loading product experience...', loadKey)
+
       // Validate parameters
       if (!areParamsValid(params)) {
         setError(params.errors.join(', '))
@@ -40,7 +54,7 @@ export default function ProductExperience() {
           .eq('key', 'pre_registration_required')
           .maybeSingle()
 
-        const preRegRequired = preRegSetting?.value === 'true'
+        const preRegRequired = (preRegSetting as any)?.value === 'true'
 
         // Handle unit data based on pre-registration mode
         if (preRegRequired) {
@@ -103,7 +117,7 @@ export default function ProductExperience() {
           .eq('key', 'scan_cooldown_seconds')
           .maybeSingle()
 
-        const cooldownSeconds = cooldownSetting ? parseInt(cooldownSetting.value, 10) : 300 // Default: 300s = 5min
+        const cooldownSeconds = cooldownSetting ? parseInt((cooldownSetting as any).value, 10) : 300 // Default: 300s = 5min
 
         // Check scan history
         const fingerprint = await getFingerprint()
@@ -118,9 +132,9 @@ export default function ProductExperience() {
         // Determine if this is first scan with cooldown period check
         let isFirstTime = !scanData
 
-        if (scanData && scanData.first_scan_at) {
+        if (scanData && (scanData as any).first_scan_at) {
           // Check if cooldown period has passed
-          const firstScanTime = new Date(scanData.first_scan_at).getTime()
+          const firstScanTime = new Date((scanData as any).first_scan_at).getTime()
           const now = new Date().getTime()
           const secondsPassed = (now - firstScanTime) / 1000
 
@@ -133,20 +147,52 @@ export default function ProductExperience() {
         setIsFirstScan(isFirstTime)
 
         // Record scan (happens after determining first scan state)
-        await supabase
-          .from('scans')
-          .upsert(
-            {
-              uid: params.uid,
-              device_fingerprint: fingerprint,
-              scan_count: (scanData?.scan_count || 0) + 1,
-              last_scan_at: new Date().toISOString(),
-              user_agent: navigator.userAgent,
-            },
-            {
-              onConflict: 'uid,device_fingerprint',
+        // Mark as loaded to prevent re-execution
+        hasLoadedRef.current = loadKey
+
+        try {
+          if (scanData) {
+            // Update existing scan
+            const { error: updateError } = await supabase
+              .from('scans')
+              .update({
+                scan_count: ((scanData as any).scan_count || 0) + 1,
+                last_scan_at: new Date().toISOString(),
+              })
+              .eq('uid', params.uid)
+              .eq('device_fingerprint', fingerprint)
+
+            if (updateError) {
+              console.error('Error updating scan:', updateError)
+            } else {
+              console.log('Scan updated successfully')
             }
-          )
+          } else {
+            // Insert new scan - use upsert to handle any race conditions
+            const { error: upsertError } = await supabase
+              .from('scans')
+              .upsert({
+                uid: params.uid,
+                device_fingerprint: fingerprint,
+                scan_count: 1,
+                first_scan_at: new Date().toISOString(),
+                last_scan_at: new Date().toISOString(),
+                user_agent: navigator.userAgent,
+              }, {
+                onConflict: 'uid,device_fingerprint',
+                ignoreDuplicates: false
+              })
+
+            if (upsertError) {
+              console.error('Error upserting scan:', upsertError)
+            } else {
+              console.log('Scan inserted successfully')
+            }
+          }
+        } catch (scanError) {
+          // Non-blocking: log but don't fail the page load
+          console.error('Scan recording error:', scanError)
+        }
 
         setLoading(false)
       } catch (err) {
@@ -157,7 +203,8 @@ export default function ProductExperience() {
     }
 
     loadProductExperience()
-  }, [params, t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.uid, params.prd, params.cc, lang, brand])
 
   if (loading) {
     return (
@@ -189,35 +236,15 @@ export default function ProductExperience() {
 
   // Render appropriate experience based on scan history
   return (
-    <div className="min-h-screen">
-      {isFirstScan ? (
-        <UnboxingExperience unitData={unitData} />
-      ) : (
-        <SupportHub unitData={unitData} />
-      )}
-    </div>
-  )
-}
-
-// Placeholder components (to be implemented in Phase 2)
-function UnboxingExperience({ unitData }: { unitData: UnitWithRelations }) {
-  const { t } = useTranslation()
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="text-center max-w-2xl">
-        <h1 className="text-5xl font-bold mb-6" style={{ color: 'var(--campaign-primary)' }}>
-          {t('welcome.title', { productName: unitData.products.name })}
-        </h1>
-        <p className="text-xl text-gray-600 mb-4">{t('welcome.subtitle')}</p>
-        <p className="text-sm text-gray-500">
-          Campaign: {unitData.campaigns.name} | Product: {unitData.products.name}
-        </p>
-        <div className="mt-8">
-          <p className="text-gray-500">Phase 2: Unboxing experience with 3D model coming soon...</p>
-        </div>
+    <ErrorBoundary>
+      <div className="min-h-screen">
+        {isFirstScan ? (
+          <UnboxingExperience unitData={unitData} />
+        ) : (
+          <SupportHub unitData={unitData} />
+        )}
       </div>
-    </div>
+    </ErrorBoundary>
   )
 }
 

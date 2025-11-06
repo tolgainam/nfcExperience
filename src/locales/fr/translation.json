@@ -16,7 +16,21 @@
   "unboxing": {
     "hero": "Découvrez l'Innovation",
     "explore": "Commencer à Explorer",
-    "gettingStarted": "Pour Commencer"
+    "gettingStarted": "Pour Commencer",
+    "scrollToExplore": "Faites défiler pour explorer",
+    "gettingStarted.description": "Suivez ces étapes simples pour commencer votre voyage",
+    "feature1": {
+      "title": "Design Premium",
+      "description": "Découvrez le mélange parfait d'innovation et de style"
+    },
+    "feature2": {
+      "title": "Technologie Avancée",
+      "description": "Des fonctionnalités de pointe conçues pour votre confort"
+    },
+    "feature3": {
+      "title": "Facile à Utiliser",
+      "description": "Un design intuitif qui fonctionne simplement"
+    }
   },
   "support": {
     "title": "Bon Retour",

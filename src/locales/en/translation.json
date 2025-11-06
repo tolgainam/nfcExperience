@@ -16,7 +16,21 @@
   "unboxing": {
     "hero": "Experience Innovation",
     "explore": "Start Exploring",
-    "gettingStarted": "Getting Started"
+    "gettingStarted": "Getting Started",
+    "scrollToExplore": "Scroll to explore",
+    "gettingStarted.description": "Follow these simple steps to begin your journey",
+    "feature1": {
+      "title": "Premium Design",
+      "description": "Experience the perfect blend of innovation and style"
+    },
+    "feature2": {
+      "title": "Advanced Technology",
+      "description": "Cutting-edge features designed for your comfort"
+    },
+    "feature3": {
+      "title": "Easy to Use",
+      "description": "Intuitive design that just works"
+    }
   },
   "support": {
     "title": "Welcome Back",
