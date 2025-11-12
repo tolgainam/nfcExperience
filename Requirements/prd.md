@@ -747,7 +747,7 @@ document.documentElement.style.setProperty('--campaign-accent', unitData.campaig
 
 ### Phase 1: Foundation (Week 1-2) ✅ COMPLETED
 - [x] Project setup (Vite, React, TypeScript)
-- [x] Supabase configuration and database schema (products, campaigns, units, scans)
+- [x] Supabase configuration and database schema (products, campaigns, units, scans, settings)
 - [x] Routing implementation with language and brand parameters
 - [x] i18n setup (react-i18next, EN/FR translations structure)
 - [x] Design system setup (Tailwind, CSS variables)
@@ -757,10 +757,12 @@ document.documentElement.style.setProperty('--campaign-accent', unitData.campaig
 - [x] Device fingerprinting
 - [x] Seed database with initial products and campaigns
 - [x] ProductExperience page with placeholder views
-- [x] Complete scan history logic
+- [x] Complete scan history logic with configurable cooldown
+- [x] Pre-registration toggle feature (flexible deployment modes)
 - [x] Error handling and loading states
+- [x] Comprehensive documentation (SETUP.md, CLAUDE.md, TESTING-SCANS.md)
 
-**Status**: All foundation components complete and functional. Database seeding script ready (`supabase-seed.sql`). Setup documentation in `SETUP.md`. Ready for Phase 2.
+**Status**: All foundation components complete and functional. Database seeding script ready (`supabase-seed.sql`). Setup documentation in `SETUP.md`. Pre-registration toggle demonstrates deployment flexibility. Ready for Phase 2.
 
 ### Phase 2: First Scan Experience (Week 2-3)
 - [ ] 3D model integration (React Three Fiber)

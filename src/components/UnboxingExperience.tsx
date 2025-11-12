@@ -1,9 +1,98 @@
-import { useRef } from 'react'
+import { useRef, Suspense, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
+import { PerspectiveCamera, useGLTF, Environment } from '@react-three/drei'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { PCFSoftShadowMap } from 'three'
 import type { UnitWithRelations } from '../types/database'
+import UnboxingContentCards from './UnboxingContentCards'
+
+// Helper function to convert degrees to radians
+const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180
+
+// Animated PointLight component for scroll-based animations
+function AnimatedPointLight({
+  scrollYProgress,
+  basePosition,
+  animateX = 0,
+  animateY = 0,
+  animateZ = 0,
+  animateIntensity = 0,
+  baseIntensity = 0,
+  ...props
+}: any) {
+  const ref = useRef<any>(null)
+
+  useFrame(() => {
+    if (ref.current && scrollYProgress) {
+      const p = scrollYProgress.get()
+      ref.current.position.x = basePosition[0] + animateX * p
+      ref.current.position.y = basePosition[1] + animateY * p
+      ref.current.position.z = basePosition[2] + animateZ * p
+      ref.current.intensity = baseIntensity + animateIntensity * p
+    }
+  })
+
+  return <pointLight ref={ref} position={basePosition} intensity={baseIntensity} {...props} />
+}
+
+// Animated SpotLight component for scroll-based animations
+function AnimatedSpotLight({
+  scrollYProgress,
+  basePosition,
+  baseTargetPosition,
+  animateX = 0,
+  animateY = 0,
+  animateZ = 0,
+  animateTargetX = 0,
+  animateTargetY = 0,
+  animateTargetZ = 0,
+  animateIntensity = 0,
+  baseIntensity = 0,
+  ...props
+}: any) {
+  const [light, setLight] = useState<any>()
+
+  useFrame(() => {
+    if (light && scrollYProgress) {
+      const p = scrollYProgress.get()
+
+      // Animate light position
+      light.position.x = basePosition[0] + animateX * p
+      light.position.y = basePosition[1] + animateY * p
+      light.position.z = basePosition[2] + animateZ * p
+
+      // Animate intensity
+      light.intensity = baseIntensity + animateIntensity * p
+
+      // Animate target position
+      if (light.target) {
+        light.target.position.x = baseTargetPosition[0] + animateTargetX * p
+        light.target.position.y = baseTargetPosition[1] + animateTargetY * p
+        light.target.position.z = baseTargetPosition[2] + animateTargetZ * p
+      }
+    }
+  })
+
+  return (
+    <>
+      <spotLight
+        ref={setLight}
+        position={basePosition}
+        intensity={baseIntensity}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.02}
+        shadow-camera-near={0.1}
+        shadow-camera-far={20}
+        shadow-camera-fov={50}
+        {...props}
+      />
+      {light && <primitive object={light.target} position={baseTargetPosition} />}
+    </>
+  )
+}
 
 interface UnboxingExperienceProps {
   unitData: UnitWithRelations
@@ -12,55 +101,76 @@ interface UnboxingExperienceProps {
 export default function UnboxingExperience({ unitData }: UnboxingExperienceProps) {
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
+  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null)
 
-  // Scroll-based animations
-  const { scrollYProgress } = useScroll({
+  // Scroll progress for hero fade
+  const { scrollYProgress: containerScrollProgress } = useScroll({
     target: containerRef,
-    offset: ['start start', 'end start']
+    offset: ['start start', '100vh start']
   })
 
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
+  const heroOpacity = useTransform(containerScrollProgress, [0, 0.5], [1, 0])
+
+  // Static scroll progress for 3D model (no rotation based on scroll)
+  const { scrollYProgress: rotationScrollProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end']
+  })
+
+  // Handle card visibility changes
+  const handleCardInView = (cardIndex: number | null) => {
+    setActiveCardIndex(cardIndex)
+  }
 
   return (
-    <div ref={containerRef} className="relative" style={{ position: 'relative', background: 'white' }}>
-      {/* Hero Section with 3D Model */}
-      <motion.section
-        style={{ opacity: heroOpacity, position: 'relative' }}
-        className="h-screen flex items-center justify-center overflow-hidden relative"
+    <div ref={containerRef} className="relative" style={{ position: 'relative', background: '#0a0a0a', width: '100%', minHeight: '100vh' }}>
+      {/* Fixed 3D Canvas Background - stays static and visible */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          width: '100%',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none'
+        }}
       >
-        {/* Background Gradient based on campaign */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100%',
-            height: '100%',
-            background: `radial-gradient(circle at center, ${unitData.campaigns.theme_primary} 0%, ${unitData.campaigns.theme_primary}80 40%, transparent 70%)`,
-            zIndex: 0,
-            pointerEvents: 'none'
-          }}
-        />
-
-        {/* 3D Model Container */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ zIndex: 1 }}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.2 }}
+          className="w-full h-full"
+          style={{ width: '100%', height: '100%' }}
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 0.6, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="w-full h-full"
-          >
-            <PlaceholderModel campaignColor={unitData.campaigns.theme_primary} />
-          </motion.div>
-        </div>
+          <PlaceholderModel
+            campaignColor={unitData.campaigns.theme_primary}
+            modelUrl={unitData.products.model_url || undefined}
+            scrollYProgress={rotationScrollProgress}
+            activeCardIndex={activeCardIndex}
+            modelScale={unitData.products.model_scale}
+            modelPositionX={unitData.products.model_position_x}
+            modelPositionY={unitData.products.model_position_y}
+            modelPositionZ={unitData.products.model_position_z}
+            modelRotationX={unitData.products.model_rotation_x}
+            modelRotationY={unitData.products.model_rotation_y}
+            modelRotationZ={unitData.products.model_rotation_z}
+          />
+        </motion.div>
+      </div>
 
+      {/* Hero Section - initial view */}
+      <motion.section
+        style={{
+          opacity: heroOpacity,
+          position: 'relative',
+          zIndex: 10
+        }}
+        className="h-screen flex items-center justify-center overflow-hidden"
+      >
         {/* Hero Text Overlay */}
-        <div className="relative z-20 text-center px-4 mix-blend-normal">
+        <div className="relative text-center px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -72,7 +182,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
             >
               {t('welcome.title', { productName: unitData.products.name })}
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-8">
+            <p className="text-xl md:text-2xl text-white mb-8">
               {t('welcome.subtitle')}
             </p>
             <motion.div
@@ -107,130 +217,293 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
         </motion.div>
       </motion.section>
 
-      {/* Features Section with Parallax */}
-      <section className="relative py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <FeatureCard
-            title={t('unboxing.feature1.title', { defaultValue: 'Premium Design' })}
-            description={t('unboxing.feature1.description', { defaultValue: 'Experience the perfect blend of innovation and style' })}
-            delay={0.2}
-          />
-          <FeatureCard
-            title={t('unboxing.feature2.title', { defaultValue: 'Advanced Technology' })}
-            description={t('unboxing.feature2.description', { defaultValue: 'Cutting-edge features designed for your comfort' })}
-            delay={0.4}
-          />
-          <FeatureCard
-            title={t('unboxing.feature3.title', { defaultValue: 'Easy to Use' })}
-            description={t('unboxing.feature3.description', { defaultValue: 'Intuitive design that just works' })}
-            delay={0.6}
-          />
-        </div>
-      </section>
-
-      {/* Getting Started CTA */}
-      <section className="relative py-20 px-4 bg-gray-50">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="max-w-4xl mx-auto text-center"
-        >
-          <h2
-            className="text-4xl md:text-5xl font-bold mb-6"
-            style={{ color: 'var(--campaign-primary)' }}
-          >
-            {t('unboxing.gettingStarted')}
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            {t('unboxing.gettingStarted.description', { defaultValue: 'Follow these simple steps to begin your journey' })}
-          </p>
-          <button
-            className="px-8 py-4 text-white text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-            style={{ backgroundColor: 'var(--campaign-primary)' }}
-          >
-            {t('unboxing.explore')}
-          </button>
-        </motion.div>
-      </section>
-
-      {/* Campaign Info (Debug) */}
-      <div className="py-4 px-4 bg-gray-100 text-center text-sm text-gray-500">
-        <p>Campaign: {unitData.campaigns.name} | Product: {unitData.products.name}</p>
+      {/* Content Cards - scroll over 3D layer */}
+      <div style={{ position: 'relative', zIndex: 20 }}>
+        <UnboxingContentCards unitData={unitData} t={t} onCardInView={handleCardInView} />
       </div>
     </div>
   )
 }
 
-function FeatureCard({ title, description, delay }: { title: string; description: string; delay: number }) {
+// Indicator Dot component - appears on model at specific locations
+function IndicatorDot({ position, visible }: { position: [number, number, number]; visible: boolean }) {
+  const dotRef = useRef<any>(null)
+
+  useFrame(() => {
+    if (dotRef.current) {
+      // Pulsing animation
+      const scale = visible ? 1 + Math.sin(Date.now() * 0.003) * 0.3 : 0
+      dotRef.current.scale.setScalar(scale)
+    }
+  })
+
+  if (!visible) return null
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -50 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.8, delay }}
-      viewport={{ once: true }}
-      className="mb-12 flex items-start gap-6"
-    >
-      <div
-        className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0"
-        style={{ backgroundColor: 'var(--campaign-primary)', opacity: 0.1 }}
-      >
-        <div
-          className="w-8 h-8 rounded-full"
-          style={{ backgroundColor: 'var(--campaign-primary)' }}
+    <group position={position}>
+      {/* Outer glow ring */}
+      <mesh ref={dotRef}>
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshBasicMaterial
+          color="#4da6ff"
+          transparent
+          opacity={0.8}
         />
-      </div>
-      <div>
-        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--campaign-primary)' }}>
-          {title}
-        </h3>
-        <p className="text-gray-600 text-lg">{description}</p>
-      </div>
-    </motion.div>
+      </mesh>
+      {/* Inner bright core */}
+      <mesh>
+        <sphereGeometry args={[0.3, 32, 32]} />
+        <meshBasicMaterial
+          color="#ffffff"
+        />
+      </mesh>
+      {/* Outer pulse ring */}
+      <mesh>
+        <ringGeometry args={[0.6, 0.8, 32]} />
+        <meshBasicMaterial
+          color="#4da6ff"
+          transparent
+          opacity={0.4}
+          side={2}
+        />
+      </mesh>
+    </group>
   )
 }
 
-function Box() {
-  const meshRef = useRef<any>(null)
+function Model({
+  modelUrl,
+  campaignColor,
+  scrollYProgress,
+  activeCardIndex,
+  modelScale = 10,
+  modelPositionX = 0,
+  modelPositionY = 0,
+  modelPositionZ = 0,
+  modelRotationX = 0,
+  modelRotationY = 0,
+  modelRotationZ = 0
+}: {
+  modelUrl?: string;
+  campaignColor: string;
+  scrollYProgress: any;
+  activeCardIndex: number | null;
+  modelScale?: number;
+  modelPositionX?: number;
+  modelPositionY?: number;
+  modelPositionZ?: number;
+  modelRotationX?: number;
+  modelRotationY?: number;
+  modelRotationZ?: number;
+}) {
+  const groupRef = useRef<any>(null)
+  const meshRefs = useRef<any[]>([])
 
-  // Auto-rotate the box
-  useFrame((_state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x += delta * 1.5
-      meshRef.current.rotation.y += delta * 1.5
+  // Convert database path to actual asset path
+  // Database: /models/iluma-i-prime.glb -> Assets: /src/assets/models/iluma-i-prime.glb
+  let effectiveModelUrl = '/src/assets/models/sample3d.glb' // fallback
+
+  if (modelUrl) {
+    // If database has /models/..., convert to /src/assets/models/...
+    effectiveModelUrl = modelUrl.replace('/models/', '/src/assets/models/')
+  }
+
+  console.log('Loading 3D model from:', effectiveModelUrl)
+  console.log('Model transform:', {
+    scale: modelScale,
+    position: [modelPositionX, modelPositionY, modelPositionZ],
+    rotation: [modelRotationX, modelRotationY, modelRotationZ],
+    rotationUnit: 'degrees'
+  })
+
+  // Load the GLTF model
+  const { scene } = useGLTF(effectiveModelUrl)
+
+  // Log model info for debugging
+  console.log('Model loaded:', scene)
+  console.log('Model bounding box:', scene.children)
+
+  // Enable shadow casting and collect meshes with positions
+  scene.traverse((child: any) => {
+    if (child.isMesh) {
+      child.castShadow = true
+      child.receiveShadow = true
+      meshRefs.current.push(child)
+    }
+  })
+
+  // Define indicator dot positions for each card (relative to model)
+  // Customize these positions to point at specific features
+  const dotPositions: Record<number, [number, number, number]> = {
+    0: [0, 3.5, 2.5],    // Card 0 - Premium Design (top)
+    1: [0, 0, 0.8],      // Card 1 - Advanced Technology (front center)
+    2: [0.6, 0.5, 0.3],  // Card 2 - Smart Features (side)
+    3: [0, -0.5, 0.5],   // Card 3 - Easy to Use (button area)
+    4: [-0.5, 0, 0.3],   // Card 4 - Technical Specs (left side)
+    5: [0, -1.2, 0.3],   // Card 5 - What's in Box (bottom)
+    6: [0, 0.8, 0.5],    // Card 6 - Getting Started (upper area)
+    7: [0.4, -0.8, 0.3], // Card 7 - Support (lower right)
+  }
+
+  // Rotate model based on scroll + base rotation from database
+  useFrame(() => {
+    if (groupRef.current && scrollYProgress) {
+      // Base rotation from database (convert degrees to radians)
+      groupRef.current.rotation.x = degreesToRadians(modelRotationX)
+      groupRef.current.rotation.z = degreesToRadians(modelRotationZ)
+      // Y-axis rotation: base rotation + scroll animation (0 to 2π for full rotation)
+      groupRef.current.rotation.y = degreesToRadians(modelRotationY) + (scrollYProgress.get() * Math.PI * 2)
     }
   })
 
   return (
-    <mesh ref={meshRef}>
-      <boxGeometry args={[5, 5, 5]} />
-      <meshStandardMaterial color="#EF4444" metalness={0.3} roughness={0.4} />
-    </mesh>
+    <group ref={groupRef}>
+      {/* 3D Model */}
+      <primitive
+        object={scene}
+        scale={modelScale}
+        position={[modelPositionX, modelPositionY, modelPositionZ]}
+        castShadow
+        receiveShadow
+      />
+
+      {/* Indicator Dots - show only for active card */}
+      {Object.entries(dotPositions).map(([cardIdx, position]) => (
+        <IndicatorDot
+          key={cardIdx}
+          position={position}
+          visible={activeCardIndex === parseInt(cardIdx)}
+        />
+      ))}
+    </group>
   )
 }
 
-function PlaceholderModel({ campaignColor }: { campaignColor: string }) {
+// Preload models for better performance
+useGLTF.preload('/src/assets/models/sample3d.glb')
+useGLTF.preload('/src/assets/models/iluma-i-prime.glb')
+
+function PlaceholderModel({
+  campaignColor,
+  modelUrl,
+  scrollYProgress,
+  activeCardIndex,
+  modelScale,
+  modelPositionX,
+  modelPositionY,
+  modelPositionZ,
+  modelRotationX,
+  modelRotationY,
+  modelRotationZ
+}: {
+  campaignColor: string;
+  modelUrl?: string;
+  scrollYProgress: any;
+  activeCardIndex: number | null;
+  modelScale?: number;
+  modelPositionX?: number;
+  modelPositionY?: number;
+  modelPositionZ?: number;
+  modelRotationX?: number;
+  modelRotationY?: number;
+  modelRotationZ?: number;
+}) {
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      <Canvas style={{ width: '100%', height: '100%' }}>
-        <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={50} />
+      <Canvas
+        style={{ width: '100%', height: '100%' }}
+        shadows={{ enabled: true, type: PCFSoftShadowMap }}
+        gl={{ antialias: true, alpha: true }}
+      >
+        <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={50} />
 
-        {/* Lights */}
-        <ambientLight intensity={0.5} />
-        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
+        {/* Scene Lighting - Static (no scroll animation) */}
+        <ambientLight intensity={0.4} />
 
-        {/* 3D Box */}
-        <Box />
+        <spotLight
+          position={[0, 0, 9]}
+          target-position={[0, 0, 5]}
+          intensity={1}
+          angle={0.5}
+          penumbra={0.8}
+          decay={1.8}
+          color="#0000ff"
+        />
 
-        {/* Controls */}
-        <OrbitControls
+        <spotLight
+          position={[-2, 10, -2]}
+          target-position={[2, 0, -3]}
+          intensity={25}
+          angle={3}
+          penumbra={0}
+          decay={0.9}
+          color="#00d1d2"
+        />
+
+        <pointLight
+          position={[-3, 2, 1]}
+          intensity={5}
+          color="#4da6ff"
+        />
+
+        <pointLight
+          position={[3, -4, 2]}
+          intensity={4}
+          color="#00a6ff"
+        />
+
+
+        {/* Environment - Creates realistic scene lighting and reflections */}
+        <Environment preset="warehouse" background={true} environmentIntensity={0.02} />
+
+        {/* Background Plane - Vertical backdrop behind object, facing camera */}
+        <mesh rotation={[0, 0, 0]} position={[0, 0, -5]} receiveShadow>
+          <planeGeometry args={[50, 50]} />
+          <meshStandardMaterial
+            color="#34303d"
+            
+            roughness={0.7}
+            metalness={0.1}
+            envMapIntensity={0.1}
+          />
+        </mesh>
+
+        {/* Contact Shadows - Disabled (was causing rotating artifacts on background) */}
+        {/* <ContactShadows
+          position={[0, -1.49, 0]}
+          opacity={0.5}
+          scale={10}
+          blur={2}
+          far={5}
+        /> */}
+
+
+
+        {/* 3D Model with Suspense for loading */}
+        <Suspense fallback={null}>
+          <Model
+            modelUrl={modelUrl}
+            campaignColor={campaignColor}
+            scrollYProgress={scrollYProgress}
+            activeCardIndex={activeCardIndex}
+            modelScale={modelScale}
+            modelPositionX={modelPositionX}
+            modelPositionY={modelPositionY}
+            modelPositionZ={modelPositionZ}
+            modelRotationX={modelRotationX}
+            modelRotationY={modelRotationY}
+            modelRotationZ={modelRotationZ}
+          />
+        </Suspense>
+
+        {/* Controls - Disabled */}
+        {/* <OrbitControls
           enableZoom={false}
           enablePan={false}
-          autoRotate={true}
-          autoRotateSpeed={3}
-        />
+          autoRotate={false}
+          minPolarAngle={Math.PI / 3}
+          maxPolarAngle={Math.PI / 1.5}
+        /> */}
       </Canvas>
     </div>
   )

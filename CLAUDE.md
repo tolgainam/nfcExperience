@@ -92,15 +92,20 @@ Example: `/en/product/IQOS?type=d&cc=101&prd=1001&uid=789456`
 
 ### Scan History Logic
 
-The app uses browser fingerprinting to track if a user has scanned a specific unit before:
+The app uses a simple UID-based approach to track if a specific unit has been scanned before:
 1. Extract `uid` from URL parameters
-2. Generate device fingerprint on page load
-3. Query Supabase `scans` table for existing record (uid + fingerprint combination)
-4. If no record: Show unboxing experience (first scan)
-5. If record exists: Show support hub (return scan)
-6. Upsert scan record with updated count and timestamp
+2. Query Supabase `scans` table for existing record matching the `uid`
+3. If no record: Show unboxing experience (first scan)
+4. If record exists: Show support hub (return scan)
+5. Insert/update scan record with updated count and timestamp
 
-**Note**: Tracking is per-unit (`uid`), not per-product (`prd`). Same user scanning a different unit of the same product model will see unboxing experience again.
+**Key Concept**: Tracking is per-unit (`uid`), not per-user. The first person to scan a unit gets the unboxing experience, all subsequent scans (by anyone) show the support hub. This matches the physical reality: one unboxing per device.
+
+**Why UID-only (no fingerprinting)?**
+- Physical possession is the key indicator of ownership
+- Simpler, more reliable than browser fingerprinting
+- No issues with browser changes, incognito mode, or multiple devices
+- Better for demos and testing (consistent behavior)
 
 ### Pre-Registration Modes
 
@@ -198,12 +203,12 @@ UPDATE settings SET value = 'false' WHERE key = 'pre_registration_required';
 
 **scans table**:
 - `id` (UUID): Scan record ID - PK
-- `uid` (BIGINT): Unit identifier (no FK constraint - allows scans without pre-registration)
-- `device_fingerprint` (TEXT): Browser fingerprint
-- `scan_count` (INTEGER): Number of times this user scanned this unit
-- `first_scan_at` (TIMESTAMP): Initial scan timestamp
+- `uid` (BIGINT): Unit identifier - UNIQUE (no FK constraint - allows scans without pre-registration)
+- `scan_count` (INTEGER): Number of times this unit has been scanned
+- `first_scan_at` (TIMESTAMP): Initial scan timestamp (first unboxing)
 - `last_scan_at` (TIMESTAMP): Most recent scan
-- UNIQUE constraint on (uid, device_fingerprint)
+- `user_agent` (TEXT): Browser user agent (optional metadata)
+- One record per unit (uid) - tracks unit activation, not individual users
 
 **settings table**:
 - `key` (TEXT): Setting key - PK

@@ -16,6 +16,13 @@ export interface Database {
           name: string
           type: 'd' | 'f' | 'a'
           model_url: string | null
+          model_scale: number
+          model_position_x: number
+          model_position_y: number
+          model_position_z: number
+          model_rotation_x: number
+          model_rotation_y: number
+          model_rotation_z: number
           created_at: string
         }
         Insert: {
@@ -24,6 +31,13 @@ export interface Database {
           name: string
           type: 'd' | 'f' | 'a'
           model_url?: string | null
+          model_scale?: number
+          model_position_x?: number
+          model_position_y?: number
+          model_position_z?: number
+          model_rotation_x?: number
+          model_rotation_y?: number
+          model_rotation_z?: number
           created_at?: string
         }
         Update: {
@@ -32,6 +46,13 @@ export interface Database {
           name?: string
           type?: 'd' | 'f' | 'a'
           model_url?: string | null
+          model_scale?: number
+          model_position_x?: number
+          model_position_y?: number
+          model_position_z?: number
+          model_rotation_x?: number
+          model_rotation_y?: number
+          model_rotation_z?: number
           created_at?: string
         }
       }
@@ -94,7 +115,6 @@ export interface Database {
         Row: {
           id: string
           uid: number
-          device_fingerprint: string
           scan_count: number
           first_scan_at: string
           last_scan_at: string
@@ -103,7 +123,6 @@ export interface Database {
         Insert: {
           id?: string
           uid: number
-          device_fingerprint: string
           scan_count?: number
           first_scan_at?: string
           last_scan_at?: string
@@ -112,7 +131,6 @@ export interface Database {
         Update: {
           id?: string
           uid?: number
-          device_fingerprint?: string
           scan_count?: number
           first_scan_at?: string
           last_scan_at?: string

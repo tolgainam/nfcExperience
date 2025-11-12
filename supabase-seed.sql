@@ -12,6 +12,13 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('d', 'f', 'a')),
   model_url TEXT,
+  model_scale DECIMAL DEFAULT 10.0,
+  model_position_x DECIMAL DEFAULT 0.0,
+  model_position_y DECIMAL DEFAULT 0.0,
+  model_position_z DECIMAL DEFAULT 0.0,
+  model_rotation_x DECIMAL DEFAULT 0.0,
+  model_rotation_y DECIMAL DEFAULT 0.0,
+  model_rotation_z DECIMAL DEFAULT 0.0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (prd, brand)
 );
@@ -39,18 +46,17 @@ CREATE TABLE IF NOT EXISTS units (
   FOREIGN KEY (cc) REFERENCES campaigns(cc)
 );
 
--- Scans table (track user scans)
+-- Scans table (track unit scans - UID only, no fingerprinting)
 CREATE TABLE IF NOT EXISTS scans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  uid BIGINT NOT NULL,
-  device_fingerprint TEXT NOT NULL,
+  uid BIGINT NOT NULL UNIQUE,
   scan_count INTEGER DEFAULT 1,
   first_scan_at TIMESTAMPTZ DEFAULT NOW(),
   last_scan_at TIMESTAMPTZ DEFAULT NOW(),
-  user_agent TEXT,
-  UNIQUE(uid, device_fingerprint)
+  user_agent TEXT
 );
 -- Note: No foreign key constraint on uid - allows scans without pre-registration
+-- Note: One scan record per unit (uid). First scan = unboxing, subsequent = support hub
 
 -- Settings table (global configuration)
 CREATE TABLE IF NOT EXISTS settings (
@@ -65,7 +71,7 @@ CREATE TABLE IF NOT EXISTS settings (
 -- ============================================
 
 CREATE INDEX IF NOT EXISTS idx_units_uid ON units(uid);
-CREATE INDEX IF NOT EXISTS idx_scans_uid_fingerprint ON scans(uid, device_fingerprint);
+CREATE INDEX IF NOT EXISTS idx_scans_uid ON scans(uid);
 
 -- ============================================
 -- INSERT SEED DATA
@@ -75,10 +81,12 @@ CREATE INDEX IF NOT EXISTS idx_scans_uid_fingerprint ON scans(uid, device_finger
 -- TRUNCATE TABLE scans, units, campaigns, products CASCADE;
 
 -- Products
-INSERT INTO products (prd, brand, name, type, model_url) VALUES
-  (1001, 'IQOS', 'IQOS ILUMAi PRIME', 'd', '/models/iluma-i-prime.glb'),
-  (1002, 'IQOS', 'IQOS ILUMAi', 'd', '/models/iluma-i.glb'),
-  (1003, 'IQOS', 'IQOS ILUMA ONE', 'd', '/models/iluma-one.glb')
+-- Note: model_scale, model_position, and model_rotation values should be customized per product
+-- Default values: scale=10.0, position=[0.0, 0.0, 0.0], rotation=[0.0, 0.0, 0.0] (in degrees)
+INSERT INTO products (prd, brand, name, type, model_url, model_scale, model_position_x, model_position_y, model_position_z, model_rotation_x, model_rotation_y, model_rotation_z) VALUES
+  (1001, 'IQOS', 'IQOS ILUMAi PRIME', 'd', '/models/iluma-i-prime.glb', 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+  (1002, 'IQOS', 'IQOS ILUMAi', 'd', '/models/iluma-i.glb', 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+  (1003, 'IQOS', 'IQOS ILUMA ONE', 'd', '/models/iluma-one.glb', 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 ON CONFLICT (prd, brand) DO NOTHING;
 
 -- Campaigns

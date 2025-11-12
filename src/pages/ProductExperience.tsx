@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
-import { getFingerprint } from '../lib/fingerprint'
 import { parseNFCParams, areParamsValid } from '../lib/urlParams'
 import { useCampaignTheme } from '../hooks/useCampaignTheme'
 import UnboxingExperience from '../components/UnboxingExperience'
@@ -119,14 +118,11 @@ export default function ProductExperience() {
 
         const cooldownSeconds = cooldownSetting ? parseInt((cooldownSetting as any).value, 10) : 300 // Default: 300s = 5min
 
-        // Check scan history
-        const fingerprint = await getFingerprint()
-
+        // Check scan history (UID-only approach - no fingerprinting)
         const { data: scanData } = await supabase
           .from('scans')
           .select('scan_count, first_scan_at')
           .eq('uid', params.uid)
-          .eq('device_fingerprint', fingerprint)
           .maybeSingle()
 
         // Determine if this is first scan with cooldown period check
@@ -160,7 +156,6 @@ export default function ProductExperience() {
                 last_scan_at: new Date().toISOString(),
               })
               .eq('uid', params.uid)
-              .eq('device_fingerprint', fingerprint)
 
             if (updateError) {
               console.error('Error updating scan:', updateError)
@@ -168,23 +163,19 @@ export default function ProductExperience() {
               console.log('Scan updated successfully')
             }
           } else {
-            // Insert new scan - use upsert to handle any race conditions
-            const { error: upsertError } = await supabase
+            // Insert new scan
+            const { error: insertError } = await supabase
               .from('scans')
-              .upsert({
+              .insert({
                 uid: params.uid,
-                device_fingerprint: fingerprint,
                 scan_count: 1,
                 first_scan_at: new Date().toISOString(),
                 last_scan_at: new Date().toISOString(),
                 user_agent: navigator.userAgent,
-              }, {
-                onConflict: 'uid,device_fingerprint',
-                ignoreDuplicates: false
               })
 
-            if (upsertError) {
-              console.error('Error upserting scan:', upsertError)
+            if (insertError) {
+              console.error('Error inserting scan:', insertError)
             } else {
               console.log('Scan inserted successfully')
             }
