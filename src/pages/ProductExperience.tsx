@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { parseNFCParams, areParamsValid } from '../lib/urlParams'
 import { useCampaignTheme } from '../hooks/useCampaignTheme'
 import UnboxingExperience from '../components/UnboxingExperience'
+import SupportHub from '../components/SupportHub'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { UnitWithRelations } from '../types/database'
 
@@ -236,26 +237,5 @@ export default function ProductExperience() {
         )}
       </div>
     </ErrorBoundary>
-  )
-}
-
-function SupportHub({ unitData }: { unitData: UnitWithRelations }) {
-  const { t } = useTranslation()
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="text-center max-w-2xl">
-        <h1 className="text-4xl font-bold mb-6" style={{ color: 'var(--campaign-primary)' }}>
-          {t('support.title')}
-        </h1>
-        <p className="text-lg text-gray-600 mb-4">{unitData.products.name}</p>
-        <p className="text-sm text-gray-500">
-          Campaign: {unitData.campaigns.name}
-        </p>
-        <div className="mt-8">
-          <p className="text-gray-500">Phase 4: Support hub content coming soon...</p>
-        </div>
-      </div>
-    </div>
   )
 }

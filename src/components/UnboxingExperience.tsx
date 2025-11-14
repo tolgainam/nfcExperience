@@ -1,98 +1,11 @@
-import { useRef, Suspense, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { PerspectiveCamera, useGLTF, Environment } from '@react-three/drei'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import React, { useRef, useState, useEffect } from 'react'
+import { motion, useScroll } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { PCFSoftShadowMap } from 'three'
 import type { UnitWithRelations } from '../types/database'
-import UnboxingContentCards from './UnboxingContentCards'
-
-// Helper function to convert degrees to radians
-const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180
-
-// Animated PointLight component for scroll-based animations
-function AnimatedPointLight({
-  scrollYProgress,
-  basePosition,
-  animateX = 0,
-  animateY = 0,
-  animateZ = 0,
-  animateIntensity = 0,
-  baseIntensity = 0,
-  ...props
-}: any) {
-  const ref = useRef<any>(null)
-
-  useFrame(() => {
-    if (ref.current && scrollYProgress) {
-      const p = scrollYProgress.get()
-      ref.current.position.x = basePosition[0] + animateX * p
-      ref.current.position.y = basePosition[1] + animateY * p
-      ref.current.position.z = basePosition[2] + animateZ * p
-      ref.current.intensity = baseIntensity + animateIntensity * p
-    }
-  })
-
-  return <pointLight ref={ref} position={basePosition} intensity={baseIntensity} {...props} />
-}
-
-// Animated SpotLight component for scroll-based animations
-function AnimatedSpotLight({
-  scrollYProgress,
-  basePosition,
-  baseTargetPosition,
-  animateX = 0,
-  animateY = 0,
-  animateZ = 0,
-  animateTargetX = 0,
-  animateTargetY = 0,
-  animateTargetZ = 0,
-  animateIntensity = 0,
-  baseIntensity = 0,
-  ...props
-}: any) {
-  const [light, setLight] = useState<any>()
-
-  useFrame(() => {
-    if (light && scrollYProgress) {
-      const p = scrollYProgress.get()
-
-      // Animate light position
-      light.position.x = basePosition[0] + animateX * p
-      light.position.y = basePosition[1] + animateY * p
-      light.position.z = basePosition[2] + animateZ * p
-
-      // Animate intensity
-      light.intensity = baseIntensity + animateIntensity * p
-
-      // Animate target position
-      if (light.target) {
-        light.target.position.x = baseTargetPosition[0] + animateTargetX * p
-        light.target.position.y = baseTargetPosition[1] + animateTargetY * p
-        light.target.position.z = baseTargetPosition[2] + animateTargetZ * p
-      }
-    }
-  })
-
-  return (
-    <>
-      <spotLight
-        ref={setLight}
-        position={basePosition}
-        intensity={baseIntensity}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0001}
-        shadow-normalBias={0.02}
-        shadow-camera-near={0.1}
-        shadow-camera-far={20}
-        shadow-camera-fov={50}
-        {...props}
-      />
-      {light && <primitive object={light.target} position={baseTargetPosition} />}
-    </>
-  )
-}
+import PlaceholderModel from './3d/PlaceholderModel'
+import ProductShowcaseExample from './ProductShowcaseExample'
+import GradientText from './GradientText'
+import introVideo from '../assets/intro-logo-melted.mp4'
 
 interface UnboxingExperienceProps {
   unitData: UnitWithRelations
@@ -103,19 +16,39 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null)
 
-  // Scroll progress for hero fade
-  const { scrollYProgress: containerScrollProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', '100vh start']
-  })
+  // Section 1 scroll animation states
+  const [headerHeight, setHeaderHeight] = useState(100)
+  const [textOpacity, setTextOpacity] = useState(1)
 
-  const heroOpacity = useTransform(containerScrollProgress, [0, 0.5], [1, 0])
+  // Refs for each section
+  const section2Ref = useRef<HTMLDivElement>(null)
 
-  // Static scroll progress for 3D model (no rotation based on scroll)
-  const { scrollYProgress: rotationScrollProgress } = useScroll({
-    target: containerRef,
+  // Scroll progress for entire page
+  const { scrollY } = useScroll()
+
+  // Scroll progress for Section 2 (3D animation) - tracks the 200vh section
+  const { scrollYProgress: section2ScrollProgress } = useScroll({
+    target: section2Ref,
     offset: ['start start', 'end end']
   })
+
+  // Track scroll for Section 1 transform
+  useEffect(() => {
+    const unsubscribe = scrollY.on('change', (latest) => {
+      // Scroll range for animation (0-1000px) - slower animation
+      const scrollRange = 1200
+      const progress = Math.min(latest / scrollRange, 1)
+
+      // Height: 100vh → 9vh (90px)
+      const newHeight = 100 - (progress * (100 - 9))
+      setHeaderHeight(newHeight)
+
+      // Fade out text: 1 → 0
+      setTextOpacity(1 - progress)
+    })
+
+    return () => unsubscribe()
+  }, [scrollY])
 
   // Handle card visibility changes
   const handleCardInView = (cardIndex: number | null) => {
@@ -123,388 +56,202 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
   }
 
   return (
-    <div ref={containerRef} className="relative" style={{ position: 'relative', background: '#0a0a0a', width: '100%', minHeight: '100vh' }}>
-      {/* Fixed 3D Canvas Background - stays static and visible */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          width: '100%',
-          height: '100vh',
-          zIndex: 0,
-          pointerEvents: 'none'
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="w-full h-full"
-          style={{ width: '100%', height: '100%' }}
-        >
-          <PlaceholderModel
-            campaignColor={unitData.campaigns.theme_primary}
-            modelUrl={unitData.products.model_url || undefined}
-            scrollYProgress={rotationScrollProgress}
-            activeCardIndex={activeCardIndex}
-            modelScale={unitData.products.model_scale}
-            modelPositionX={unitData.products.model_position_x}
-            modelPositionY={unitData.products.model_position_y}
-            modelPositionZ={unitData.products.model_position_z}
-            modelRotationX={unitData.products.model_rotation_x}
-            modelRotationY={unitData.products.model_rotation_y}
-            modelRotationZ={unitData.products.model_rotation_z}
-          />
-        </motion.div>
-      </div>
+    <div ref={containerRef} style={{ background: '#0a0a0a', width: '100%' }}>
 
-      {/* Hero Section - initial view */}
-      <motion.section
+      {/* SECTION 1: Landing Section - Transforms into sticky header */}
+      <section
+        className="w-full flex flex-col items-center"
         style={{
-          opacity: heroOpacity,
-          position: 'relative',
-          zIndex: 10
+          position: 'sticky',
+          top: '0',
+          background: '#0a0a0a',
+          gap: headerHeight > 20 ? '32px' : '0',
+          height: `${Math.max(headerHeight, 9)}vh`,
+          minHeight: '90px',
+          justifyContent: headerHeight > 20 ? 'center' : 'flex-start',
+          paddingTop: '16px',
+          paddingBottom: '16px',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          zIndex: 100,
+          overflow: 'hidden'
         }}
-        className="h-screen flex items-center justify-center overflow-hidden"
       >
-        {/* Hero Text Overlay */}
-        <div className="relative text-center px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+        {/* Video container - scales down gradually */}
+        <div
+          className="flex items-center justify-center"
+          style={{
+            width: (() => {
+              // Calculate gradual scaling from 80% to 60px
+              const progress = (headerHeight - 9) / (100 - 9) // 0 to 1
+              if (progress > 0.2) {
+                return `${Math.max(20, progress * 80)}%`
+              }
+              return '60px'
+            })(),
+            transition: 'width 0.1s linear'
+          }}
+        >
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="object-contain w-full"
+            style={{ opacity: headerHeight <= 9 ? 0.6 : 0.8, transition: 'opacity 0.3s ease-out' }}
           >
-            <h1
-              className="text-6xl md:text-8xl font-bold mb-4"
-              style={{ color: 'var(--campaign-primary)' }}
-            >
-              {t('welcome.title', { productName: unitData.products.name })}
-            </h1>
-            <p className="text-xl md:text-2xl text-white mb-8">
-              {t('welcome.subtitle')}
-            </p>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1, duration: 0.8 }}
-              className="text-sm text-gray-400"
-            >
-              {t('unboxing.scrollToExplore', { defaultValue: 'Scroll to explore' })}
-            </motion.div>
-          </motion.div>
+            <source src={introVideo} type="video/mp4" />
+          </video>
         </div>
 
-        {/* Scroll Indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          style={{ position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 30 }}
+        {/* Text content - fades out */}
+        <div
+          className="text-center"
+          style={{
+            opacity: textOpacity,
+            pointerEvents: textOpacity < 0.1 ? 'none' : 'auto',
+            transition: 'opacity 0.1s linear'
+          }}
+        >
+          <GradientText
+            colors={['#c9964a', '#d4a556', '#f5e6c8']}
+            fontSize="large"
+            animate={true}
+            animationDuration="5s"
+            glow={true}
+            textAlign="center"
+            className="mb-4"
+          >
+            IQOS ILUMA i
+          </GradientText>
+          <p className="text-xl md:text-2xl" style={{ color: '#c9964a' }}>
+            Your journey starts here
+          </p>
+        </div>
+
+        {/* Scroll Indicator - fades out */}
+        <div
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+          style={{
+            opacity: textOpacity,
+            pointerEvents: textOpacity < 0.1 ? 'none' : 'auto',
+            transition: 'opacity 0.1s linear'
+          }}
         >
           <motion.div
             animate={{ y: [0, 10, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-6 h-10 border-2 rounded-full flex items-start justify-center p-2"
-            style={{ borderColor: 'var(--campaign-primary)' }}
+            className="w-6 h-10 border-2 border-white rounded-full flex items-start justify-center p-2"
           >
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: 'var(--campaign-primary)' }}
+            <div className="w-1.5 h-1.5 bg-white rounded-full" />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* SECTION 2: 300vh tall section - creates scroll distance */}
+      <section ref={section2Ref} style={{ height: '280vh', width: '100%' }}>
+        {/* Centered wrapper - constrains max width */}
+        <div style={{ width: '100%', maxWidth: '420px', margin: '0 auto', height: '220vh' }}>
+          {/* Sticky container - 80vh tall, sticks to top during scroll */}
+          <div style={{ position: 'sticky', top: 0, width: '100%', height: '100vh', zIndex: 1 }}>
+            <PlaceholderModel
+              campaignColor={unitData.campaigns.theme_primary}
+              modelUrl={unitData.products.model_url || undefined}
+              scrollYProgress={section2ScrollProgress}
+              modelScale={unitData.products.model_scale}
+              modelPositionX={unitData.products.model_position_x}
+              modelPositionY={unitData.products.model_position_y}
+              modelPositionZ={unitData.products.model_position_z}
+              modelRotationX={unitData.products.model_rotation_x}
+              modelRotationY={unitData.products.model_rotation_y}
+              modelRotationZ={unitData.products.model_rotation_z}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: Product Showcase */}
+      <section id="section3" className="relative" style={{
+        padding: '64px 16px',
+        width: '100%',
+        maxWidth: '420px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        marginTop: '-95vh',
+        zIndex: 10
+      }}>
+        <ProductShowcaseExample />
+      </section>
+
+      {/* SECTION 4: Prize Section */}
+      <section className="relative w-full" style={{ background: '#0a0a0a', padding: '64px 16px' }}>
+        <div className="relative w-full flex flex-col items-center" style={{ gap: '16px' }}>
+
+          {/* Container 1: Prize Image */}
+          <motion.div
+            className="relative w-full flex items-center justify-center"
+            style={{ borderRadius: '24px', padding: '32px 0' }}
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
+            <img
+              src="/prize.png"
+              alt="IQOS x Seletti Limited Edition Organizer"
+              className="h-auto object-contain"
+              style={{ width: '80%' }}
             />
           </motion.div>
-        </motion.div>
-      </motion.section>
 
-      {/* Content Cards - scroll over 3D layer */}
-      <div style={{ position: 'relative', zIndex: 20 }}>
-        <UnboxingContentCards unitData={unitData} t={t} onCardInView={handleCardInView} />
-      </div>
-    </div>
-  )
-}
+          {/* Container 2: Text Content + CTA */}
+          <motion.div
+            className="relative w-full flex flex-col items-center"
+            style={{ borderRadius: '24px', padding: '32px 16px', gap: '24px', maxWidth: '100%' }}
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
+            {/* Title */}
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-center" style={{ color: '#c9964a', maxWidth: '895px' }}>
+              Win an IQOS x Seletti Limited Edition Organizer
+            </h2>
 
-// Indicator Dot component - appears on model at specific locations
-function IndicatorDot({ position, visible }: { position: [number, number, number]; visible: boolean }) {
-  const dotRef = useRef<any>(null)
+            {/* Body Copy */}
+            <p className="text-lg md:text-2xl text-center leading-relaxed" style={{ color: '#ffffff', maxWidth: '652px' }}>
+              Login to the IQOS CLUB or become a member today and get a chance to win one of the 1000 pieces available.
+            </p>
 
-  useFrame(() => {
-    if (dotRef.current) {
-      // Pulsing animation
-      const scale = visible ? 1 + Math.sin(Date.now() * 0.003) * 0.3 : 0
-      dotRef.current.scale.setScalar(scale)
-    }
-  })
+            {/* CTA Button - Full Width */}
+            <div className="relative w-full flex items-center justify-center">
+              <a
+                href="#enter"
+                className="relative overflow-hidden flex items-center justify-center rounded-full font-bold text-black transition-all group no-underline visited:text-black active:text-black"
+                style={{
+                  background: '#c9964a',
+                  fontSize: 'clamp(20px, 5vw, 35px)',
+                  padding: '12px 24px',
+                  textDecoration: 'none',
+                  color: '#000',
+                  width: '100%',
+                  maxWidth: '100%'
+                }}
+              >
+                <span className="relative z-10 font-bold" style={{ color: '#000' }}>Enter Here</span>
+                <span
+                  className="absolute inset-0 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-700 ease-in-out origin-left"
+                  style={{
+                    zIndex: 1,
+                    background: 'linear-gradient(90deg, rgba(212, 165, 86, 0.3) 0%, rgba(212, 165, 86, 0.8) 50%, #d4a556 100%)'
+                  }}
+                />
+              </a>
+            </div>
+          </motion.div>
 
-  if (!visible) return null
-
-  return (
-    <group position={position}>
-      {/* Outer glow ring */}
-      <mesh ref={dotRef}>
-        <sphereGeometry args={[0.5, 32, 32]} />
-        <meshBasicMaterial
-          color="#4da6ff"
-          transparent
-          opacity={0.8}
-        />
-      </mesh>
-      {/* Inner bright core */}
-      <mesh>
-        <sphereGeometry args={[0.3, 32, 32]} />
-        <meshBasicMaterial
-          color="#ffffff"
-        />
-      </mesh>
-      {/* Outer pulse ring */}
-      <mesh>
-        <ringGeometry args={[0.6, 0.8, 32]} />
-        <meshBasicMaterial
-          color="#4da6ff"
-          transparent
-          opacity={0.4}
-          side={2}
-        />
-      </mesh>
-    </group>
-  )
-}
-
-function Model({
-  modelUrl,
-  campaignColor,
-  scrollYProgress,
-  activeCardIndex,
-  modelScale = 10,
-  modelPositionX = 0,
-  modelPositionY = 0,
-  modelPositionZ = 0,
-  modelRotationX = 0,
-  modelRotationY = 0,
-  modelRotationZ = 0
-}: {
-  modelUrl?: string;
-  campaignColor: string;
-  scrollYProgress: any;
-  activeCardIndex: number | null;
-  modelScale?: number;
-  modelPositionX?: number;
-  modelPositionY?: number;
-  modelPositionZ?: number;
-  modelRotationX?: number;
-  modelRotationY?: number;
-  modelRotationZ?: number;
-}) {
-  const groupRef = useRef<any>(null)
-  const meshRefs = useRef<any[]>([])
-
-  // Convert database path to actual asset path
-  // Database: /models/iluma-i-prime.glb -> Assets: /src/assets/models/iluma-i-prime.glb
-  let effectiveModelUrl = '/src/assets/models/sample3d.glb' // fallback
-
-  if (modelUrl) {
-    // If database has /models/..., convert to /src/assets/models/...
-    effectiveModelUrl = modelUrl.replace('/models/', '/src/assets/models/')
-  }
-
-  console.log('Loading 3D model from:', effectiveModelUrl)
-  console.log('Model transform:', {
-    scale: modelScale,
-    position: [modelPositionX, modelPositionY, modelPositionZ],
-    rotation: [modelRotationX, modelRotationY, modelRotationZ],
-    rotationUnit: 'degrees'
-  })
-
-  // Load the GLTF model
-  const { scene } = useGLTF(effectiveModelUrl)
-
-  // Log model info for debugging
-  console.log('Model loaded:', scene)
-  console.log('Model bounding box:', scene.children)
-
-  // Enable shadow casting and collect meshes with positions
-  scene.traverse((child: any) => {
-    if (child.isMesh) {
-      child.castShadow = true
-      child.receiveShadow = true
-      meshRefs.current.push(child)
-    }
-  })
-
-  // Define indicator dot positions for each card (relative to model)
-  // Customize these positions to point at specific features
-  const dotPositions: Record<number, [number, number, number]> = {
-    0: [0, 3.5, 2.5],    // Card 0 - Premium Design (top)
-    1: [0, 0, 0.8],      // Card 1 - Advanced Technology (front center)
-    2: [0.6, 0.5, 0.3],  // Card 2 - Smart Features (side)
-    3: [0, -0.5, 0.5],   // Card 3 - Easy to Use (button area)
-    4: [-0.5, 0, 0.3],   // Card 4 - Technical Specs (left side)
-    5: [0, -1.2, 0.3],   // Card 5 - What's in Box (bottom)
-    6: [0, 0.8, 0.5],    // Card 6 - Getting Started (upper area)
-    7: [0.4, -0.8, 0.3], // Card 7 - Support (lower right)
-  }
-
-  // Rotate model based on scroll + base rotation from database
-  useFrame(() => {
-    if (groupRef.current && scrollYProgress) {
-      // Base rotation from database (convert degrees to radians)
-      groupRef.current.rotation.x = degreesToRadians(modelRotationX)
-      groupRef.current.rotation.z = degreesToRadians(modelRotationZ)
-      // Y-axis rotation: base rotation + scroll animation (0 to 2π for full rotation)
-      groupRef.current.rotation.y = degreesToRadians(modelRotationY) + (scrollYProgress.get() * Math.PI * 2)
-    }
-  })
-
-  return (
-    <group ref={groupRef}>
-      {/* 3D Model */}
-      <primitive
-        object={scene}
-        scale={modelScale}
-        position={[modelPositionX, modelPositionY, modelPositionZ]}
-        castShadow
-        receiveShadow
-      />
-
-      {/* Indicator Dots - show only for active card */}
-      {Object.entries(dotPositions).map(([cardIdx, position]) => (
-        <IndicatorDot
-          key={cardIdx}
-          position={position}
-          visible={activeCardIndex === parseInt(cardIdx)}
-        />
-      ))}
-    </group>
-  )
-}
-
-// Preload models for better performance
-useGLTF.preload('/src/assets/models/sample3d.glb')
-useGLTF.preload('/src/assets/models/iluma-i-prime.glb')
-
-function PlaceholderModel({
-  campaignColor,
-  modelUrl,
-  scrollYProgress,
-  activeCardIndex,
-  modelScale,
-  modelPositionX,
-  modelPositionY,
-  modelPositionZ,
-  modelRotationX,
-  modelRotationY,
-  modelRotationZ
-}: {
-  campaignColor: string;
-  modelUrl?: string;
-  scrollYProgress: any;
-  activeCardIndex: number | null;
-  modelScale?: number;
-  modelPositionX?: number;
-  modelPositionY?: number;
-  modelPositionZ?: number;
-  modelRotationX?: number;
-  modelRotationY?: number;
-  modelRotationZ?: number;
-}) {
-  return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <Canvas
-        style={{ width: '100%', height: '100%' }}
-        shadows={{ enabled: true, type: PCFSoftShadowMap }}
-        gl={{ antialias: true, alpha: true }}
-      >
-        <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={50} />
-
-        {/* Scene Lighting - Static (no scroll animation) */}
-        <ambientLight intensity={0.4} />
-
-        <spotLight
-          position={[0, 0, 9]}
-          target-position={[0, 0, 5]}
-          intensity={1}
-          angle={0.5}
-          penumbra={0.8}
-          decay={1.8}
-          color="#0000ff"
-        />
-
-        <spotLight
-          position={[-2, 10, -2]}
-          target-position={[2, 0, -3]}
-          intensity={25}
-          angle={3}
-          penumbra={0}
-          decay={0.9}
-          color="#00d1d2"
-        />
-
-        <pointLight
-          position={[-3, 2, 1]}
-          intensity={5}
-          color="#4da6ff"
-        />
-
-        <pointLight
-          position={[3, -4, 2]}
-          intensity={4}
-          color="#00a6ff"
-        />
-
-
-        {/* Environment - Creates realistic scene lighting and reflections */}
-        <Environment preset="warehouse" background={true} environmentIntensity={0.02} />
-
-        {/* Background Plane - Vertical backdrop behind object, facing camera */}
-        <mesh rotation={[0, 0, 0]} position={[0, 0, -5]} receiveShadow>
-          <planeGeometry args={[50, 50]} />
-          <meshStandardMaterial
-            color="#34303d"
-            
-            roughness={0.7}
-            metalness={0.1}
-            envMapIntensity={0.1}
-          />
-        </mesh>
-
-        {/* Contact Shadows - Disabled (was causing rotating artifacts on background) */}
-        {/* <ContactShadows
-          position={[0, -1.49, 0]}
-          opacity={0.5}
-          scale={10}
-          blur={2}
-          far={5}
-        /> */}
-
-
-
-        {/* 3D Model with Suspense for loading */}
-        <Suspense fallback={null}>
-          <Model
-            modelUrl={modelUrl}
-            campaignColor={campaignColor}
-            scrollYProgress={scrollYProgress}
-            activeCardIndex={activeCardIndex}
-            modelScale={modelScale}
-            modelPositionX={modelPositionX}
-            modelPositionY={modelPositionY}
-            modelPositionZ={modelPositionZ}
-            modelRotationX={modelRotationX}
-            modelRotationY={modelRotationY}
-            modelRotationZ={modelRotationZ}
-          />
-        </Suspense>
-
-        {/* Controls - Disabled */}
-        {/* <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          autoRotate={false}
-          minPolarAngle={Math.PI / 3}
-          maxPolarAngle={Math.PI / 1.5}
-        /> */}
-      </Canvas>
+        </div>
+      </section>
     </div>
   )
 }

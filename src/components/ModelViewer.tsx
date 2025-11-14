@@ -86,7 +86,7 @@ export default function ModelViewer({
   return (
     <div className="w-full h-full">
       <Canvas>
-        <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
+        <PerspectiveCamera makeDefault position={[0, 0, 20]} fov={70} />
 
         {/* Lighting */}
         <ambientLight intensity={0.5} />
