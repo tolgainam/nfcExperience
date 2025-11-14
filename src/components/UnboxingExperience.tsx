@@ -128,9 +128,9 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
       </motion.section>
 
       {/* SECTION 2: 300vh tall section - creates scroll distance */}
-      <section ref={section2Ref} style={{ height: '280vh', width: '100%' }}>
+      <section ref={section2Ref} style={{ height: '300vh', width: '100%' }}>
         {/* Centered wrapper - constrains max width */}
-        <div style={{ width: '100%', maxWidth: '420px', margin: '0 auto', height: '220vh' }}>
+        <div style={{ width: '100%', maxWidth: '420px', margin: '0 auto', height: '265vh' }}>
           {/* Sticky container - 80vh tall, sticks to top during scroll */}
           <div style={{ position: 'sticky', top: 0, width: '100%', height: '100vh', zIndex: 1 }}>
             <PlaceholderModel
