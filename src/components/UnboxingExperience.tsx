@@ -30,22 +30,21 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
     offset: ['start start', 'end end']
   })
 
-  // Smooth logo scale using useTransform - maps scroll directly to scale (no state updates)
-  // scrollY: 0-1500px → logoScale: 1.0 → 0.15 (silky smooth, GPU-accelerated)
-  const logoScale = useTransform(scrollY, [0, 1500], [1.0, 0.15])
+  // Smooth animations using useTransform - maps scroll directly without state updates
+  // scrollY: 0-1500px
+  const logoScale = useTransform(scrollY, [0, 1500], [1.0, 0.15]) // 1.0 → 0.15
+  const textOpacityMotion = useTransform(scrollY, [0, 1500], [1, 0]) // 1 → 0
+  const headerHeightVh = useTransform(scrollY, [0, 1500], [100, 9]) // 100 → 9
+  const headerHeightMotion = useTransform(headerHeightVh, (vh) => `${Math.max(vh, 9)}vh`) // 100vh → 9vh
 
-  // Track scroll for Section 1 transform
+  // Track scroll for Section 1 - only for conditional logic, not animation
   useEffect(() => {
     const unsubscribe = scrollY.on('change', (latest) => {
-      // Scroll range for animation (0-1500px) - matches logoScale range
       const scrollRange = 1500
       const progress = Math.min(latest / scrollRange, 1)
 
-      // Height: 100vh → 9vh (90px)
-      const newHeight = 100 - (progress * (100 - 9))
-      setHeaderHeight(newHeight)
-
-      // Fade out text: 1 → 0
+      // Only used for conditional rendering (display: none, background color)
+      setHeaderHeight(100 - (progress * (100 - 9)))
       setTextOpacity(1 - progress)
     })
 
@@ -56,14 +55,13 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
     <div ref={containerRef} style={{ background: '#000', width: '100%' }}>
 
       {/* SECTION 1: Landing Section - Transforms into sticky header */}
-      <section
+      <motion.section
         className="w-full flex flex-col items-center"
         style={{
           position: 'sticky',
           top: '0',
           background: headerHeight <= 20 ? '#000' : '',
-          gap: textOpacity > 0.1 ? '32px' : '0',
-          height: `${Math.max(headerHeight, 9)}vh`,
+          height: headerHeightMotion,
           minHeight: '90px',
           justifyContent: 'center',
           paddingTop: '16px',
@@ -71,8 +69,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           paddingLeft: '16px',
           paddingRight: '16px',
           zIndex: 100,
-          overflow: 'hidden',
-          transition: 'background 0.3s ease-out, gap 0.2s ease-out'
+          overflow: 'hidden'
         }}
       >
         {/* Video container - scales down smoothly with GPU-accelerated transform */}
@@ -101,14 +98,14 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           </video>
         </motion.div>
 
-        {/* Text content - fades out */}
-        <div
+        {/* Text content - fades out smoothly */}
+        <motion.div
           className="text-center"
           style={{
-            opacity: textOpacity,
+            opacity: textOpacityMotion,
             display: textOpacity < 0.1 ? 'none' : 'block',
             pointerEvents: textOpacity < 0.1 ? 'none' : 'auto',
-            transition: 'opacity 0.1s linear'
+            marginTop: '32px'
           }}
         >
           <GradientText
@@ -125,10 +122,10 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           <p className="text-xl md:text-2xl" style={{ color: '#c9964a' }}>
             Your journey starts here
           </p>
-        </div>
+        </motion.div>
 
-      
-      </section>
+
+      </motion.section>
 
       {/* SECTION 2: 300vh tall section - creates scroll distance */}
       <section ref={section2Ref} style={{ height: '280vh', width: '100%' }}>
