@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { motion, useScroll } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import type { UnitWithRelations } from '../types/database'
 import PlaceholderModel from './3d/PlaceholderModel'
 import ProductShowcaseExample from './ProductShowcaseExample'
@@ -30,11 +30,15 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
     offset: ['start start', 'end end']
   })
 
+  // Smooth logo scale using useTransform - maps scroll directly to scale (no state updates)
+  // scrollY: 0-1500px → logoScale: 1.0 → 0.15 (silky smooth, GPU-accelerated)
+  const logoScale = useTransform(scrollY, [0, 1500], [1.0, 0.15])
+
   // Track scroll for Section 1 transform
   useEffect(() => {
     const unsubscribe = scrollY.on('change', (latest) => {
-      // Scroll range for animation (0-1000px) - slower animation
-      const scrollRange = 1200
+      // Scroll range for animation (0-1500px) - matches logoScale range
+      const scrollRange = 1500
       const progress = Math.min(latest / scrollRange, 1)
 
       // Height: 100vh → 9vh (90px)
@@ -57,7 +61,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
         style={{
           position: 'sticky',
           top: '0',
-          background: '',
+          background: headerHeight <= 20 ? '#000' : '',
           gap: headerHeight > 20 ? '32px' : '0',
           height: `${Math.max(headerHeight, 9)}vh`,
           minHeight: '90px',
@@ -67,22 +71,18 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           paddingLeft: '16px',
           paddingRight: '16px',
           zIndex: 100,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          transition: 'background 0.3s ease-out'
         }}
       >
-        {/* Video container - scales down gradually */}
-        <div
+        {/* Video container - scales down smoothly with GPU-accelerated transform */}
+        <motion.div
           className="flex items-center justify-center"
           style={{
-            width: (() => {
-              // Calculate gradual scaling from 80% to 60px
-              const progress = (headerHeight - 9) / (100 - 9) // 0 to 1
-              if (progress > 0.2) {
-                return `${Math.max(20, progress * 80)}%`
-              }
-              return '60px'
-            })(),
-            transition: 'width 0.1s linear'
+            width: '80%',
+            maxWidth: '800px',
+            scale: logoScale,
+            transformOrigin: 'center center'
           }}
         >
           <video
@@ -91,11 +91,15 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
             loop
             playsInline
             className="object-contain w-full"
-            style={{ opacity: headerHeight <= 9 ? 0.6 : 0.8, transition: 'opacity 0.3s ease-out' }}
+            style={{
+              opacity: headerHeight <= 9 ? 0.6 : 0.8,
+              transition: 'opacity 0.3s ease-out',
+              display: 'block'
+            }}
           >
             <source src={introVideo} type="video/mp4" />
           </video>
-        </div>
+        </motion.div>
 
         {/* Text content - fades out */}
         <div
