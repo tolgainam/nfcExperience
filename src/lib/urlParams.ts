@@ -100,6 +100,7 @@ export function areParamsValid(params: ParsedParams): params is ParsedParams & {
 
 /**
  * Generate NFC URL for testing
+ * Note: When using this in components, prepend with basename if needed
  */
 export function generateNFCUrl(
   lang: 'en' | 'fr',
@@ -109,7 +110,10 @@ export function generateNFCUrl(
     cc: number
     prd: number
     uid: number
-  }
+  },
+  basename = ''
 ): string {
-  return `/${lang}/product/${brand}?type=${params.type}&cc=${params.cc}&prd=${params.prd}&uid=${params.uid}`
+  // Remove trailing slash from basename if present
+  const cleanBasename = basename.endsWith('/') ? basename.slice(0, -1) : basename
+  return `${cleanBasename}/${lang}/product/${brand}?type=${params.type}&cc=${params.cc}&prd=${params.prd}&uid=${params.uid}`
 }

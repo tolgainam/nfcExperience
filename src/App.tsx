@@ -3,9 +3,14 @@ import LanguageWrapper from './components/LanguageWrapper'
 import ProductExperience from './pages/ProductExperience'
 import './lib/i18n' // Initialize i18n
 
+// Get base path for GitHub Pages deployment
+// In production (GitHub Pages): /nfcExperience/
+// In development: /
+const basename = import.meta.env.BASE_URL
+
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         {/* Redirect root to English landing */}
         <Route path="/" element={<Navigate to="/en" replace />} />
@@ -40,7 +45,7 @@ function LandingPlaceholder() {
           <ul className="space-y-1">
             <li>
               <a
-                href="/en/product/IQOS?type=d&cc=101&prd=1001&uid=999001"
+                href={`${basename}en/product/IQOS?type=d&cc=101&prd=1001&uid=999001`}
                 className="text-campaign-primary hover:underline"
               >
                 Electric Blue ILUMAi PRIME (EN)
@@ -48,7 +53,7 @@ function LandingPlaceholder() {
             </li>
             <li>
               <a
-                href="/fr/product/IQOS?type=d&cc=102&prd=1001&uid=999002"
+                href={`${basename}fr/product/IQOS?type=d&cc=102&prd=1001&uid=999002`}
                 className="text-campaign-primary hover:underline"
               >
                 Slate ILUMAi PRIME (FR)
@@ -69,7 +74,7 @@ function NotFound() {
         <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
         <p className="text-xl text-gray-600 mb-4">Page not found</p>
         <a
-          href="/"
+          href={basename}
           className="inline-block px-6 py-3 bg-campaign-primary text-white rounded-lg hover:opacity-90 transition-opacity"
         >
           Go Home
