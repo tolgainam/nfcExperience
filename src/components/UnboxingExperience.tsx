@@ -62,7 +62,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           position: 'sticky',
           top: '0',
           background: headerHeight <= 20 ? '#000' : '',
-          gap: headerHeight > 20 ? '32px' : '0',
+          gap: textOpacity > 0.1 ? '32px' : '0',
           height: `${Math.max(headerHeight, 9)}vh`,
           minHeight: '90px',
           justifyContent: 'center',
@@ -72,7 +72,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           paddingRight: '16px',
           zIndex: 100,
           overflow: 'hidden',
-          transition: 'background 0.3s ease-out'
+          transition: 'background 0.3s ease-out, gap 0.2s ease-out'
         }}
       >
         {/* Video container - scales down smoothly with GPU-accelerated transform */}
@@ -106,6 +106,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           className="text-center"
           style={{
             opacity: textOpacity,
+            display: textOpacity < 0.1 ? 'none' : 'block',
             pointerEvents: textOpacity < 0.1 ? 'none' : 'auto',
             transition: 'opacity 0.1s linear'
           }}
