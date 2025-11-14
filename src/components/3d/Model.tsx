@@ -147,7 +147,7 @@ export default function Model({
     if (!initializedRef.current && scene && animations) {
       // Enable shadow casting
       scene.traverse((child) => {
-        if (child.isMesh) {
+        if ((child as THREE.Mesh).isMesh) {
           child.castShadow = true
           child.receiveShadow = true
         }
@@ -199,12 +199,12 @@ export default function Model({
     if (scrollYProgress) {
       const scrollProgress = scrollYProgress.get() // 0 to 1
 
-      if (mixerRef.current && mixerRef.current._actions) {
-        const actions = mixerRef.current._actions
+      if (mixerRef.current && (mixerRef.current as typeof mixerRef.current & { _actions?: THREE.AnimationAction[] })._actions) {
+        const actions = (mixerRef.current as typeof mixerRef.current & { _actions: THREE.AnimationAction[] })._actions
 
         if (actions && actions.length > 0) {
           // Control ALL animations (not just first)
-          actions.forEach((action) => {
+          actions.forEach((action: THREE.AnimationAction) => {
             if (action && action.getClip()) {
               const clip = action.getClip()
               const duration = clip.duration

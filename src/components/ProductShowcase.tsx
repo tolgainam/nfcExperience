@@ -51,8 +51,7 @@
  * 9. Discover All CTA
  */
 
-import React from 'react'
-import { motion } from 'framer-motion'
+import { motion, type Variants } from 'framer-motion'
 
 interface ProductShowcaseProps {
   logoUrl: string
@@ -91,7 +90,7 @@ export default function ProductShowcase({
   registrationHeading = 'Register your device'
 }: ProductShowcaseProps) {
   // Animation variants for fade in from left
-  const fadeInLeft = {
+  const fadeInLeft: Variants = {
     hidden: { opacity: 0, x: -30 },
     visible: {
       opacity: 1,
@@ -101,7 +100,7 @@ export default function ProductShowcase({
   }
 
   // Animation variants for fade in from right
-  const fadeInRight = {
+  const fadeInRight: Variants = {
     hidden: { opacity: 0, x: 30 },
     visible: {
       opacity: 1,

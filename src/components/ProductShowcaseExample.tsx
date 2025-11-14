@@ -17,7 +17,6 @@
  * to the ProductShowcase component directly.
  */
 
-import React from 'react'
 import ProductShowcase from './ProductShowcase'
 
 // Figma asset URLs (valid for 7 days from generation)

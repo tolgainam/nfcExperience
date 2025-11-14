@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion, useScroll } from 'framer-motion'
 import type { UnitWithRelations } from '../types/database'
 import PlaceholderModel from './3d/PlaceholderModel'

@@ -13,10 +13,14 @@
  * 5. Get support card (with outlined buttons)
  */
 
-import React from 'react'
 import { motion } from 'framer-motion'
+import type { UnitWithRelations } from '../types/database'
 
-export default function SupportHub() {
+interface SupportHubProps {
+  unitData: UnitWithRelations
+}
+
+export default function SupportHub({ unitData: _unitData }: SupportHubProps) {
 
   return (
     <div style={{ background: '#0a0a0a', width: '100%', minHeight: '100vh' }}>
