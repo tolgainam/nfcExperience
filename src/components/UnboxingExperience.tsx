@@ -17,12 +17,9 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
   // Section 1 scroll animation states
   const [headerHeight, setHeaderHeight] = useState(100)
   const [textOpacity, setTextOpacity] = useState(1)
-  const [logoScale, setLogoScale] = useState(1)
 
   // Refs for each section
   const section2Ref = useRef<HTMLDivElement>(null)
-  const rafRef = useRef<number | null>(null)
-  const lastScrollRef = useRef(0)
 
   // Scroll progress for entire page
   const { scrollY } = useScroll()
@@ -33,51 +30,22 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
     offset: ['start start', 'end end']
   })
 
-  // Smooth easing function (ease-out cubic)
-  const easeOutCubic = (t: number): number => {
-    return 1 - Math.pow(1 - t, 3)
-  }
-
-  // Track scroll for Section 1 transform with RAF throttling
+  // Track scroll for Section 1 transform
   useEffect(() => {
-    const handleScroll = (latest: number) => {
-      // Cancel previous RAF if it exists
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
-      }
+    const unsubscribe = scrollY.on('change', (latest) => {
+      // Scroll range for animation (0-1000px) - slower animation
+      const scrollRange = 1200
+      const progress = Math.min(latest / scrollRange, 1)
 
-      // Use requestAnimationFrame for smooth updates
-      rafRef.current = requestAnimationFrame(() => {
-        // Scroll range for animation (0-1500px) - even slower for smoother animation
-        const scrollRange = 1500
-        const rawProgress = Math.min(latest / scrollRange, 1)
+      // Height: 100vh → 9vh (90px)
+      const newHeight = 100 - (progress * (100 - 9))
+      setHeaderHeight(newHeight)
 
-        // Apply easing for smoother transitions
-        const progress = easeOutCubic(rawProgress)
+      // Fade out text: 1 → 0
+      setTextOpacity(1 - progress)
+    })
 
-        // Height: 100vh → 9vh (90px)
-        const newHeight = 100 - (progress * (100 - 9))
-        setHeaderHeight(newHeight)
-
-        // Fade out text: 1 → 0 (with easing)
-        setTextOpacity(Math.max(0, 1 - progress * 2))
-
-        // Logo scale: 1 → 0.2 (smooth continuous scale)
-        const scale = 1 - (progress * 0.8)
-        setLogoScale(Math.max(0.2, scale))
-
-        lastScrollRef.current = latest
-      })
-    }
-
-    const unsubscribe = scrollY.on('change', handleScroll)
-
-    return () => {
-      unsubscribe()
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
-      }
-    }
+    return () => unsubscribe()
   }, [scrollY])
 
   return (
@@ -89,9 +57,9 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
         style={{
           position: 'sticky',
           top: '0',
-          background: headerHeight > 20 ? '' : '#0a0a0a',
+          background: '#0a0a0a',
           gap: headerHeight > 20 ? '32px' : '0',
-          height: `${Math.max(headerHeight, 8)}vh`,
+          height: `${Math.max(headerHeight, 9)}vh`,
           minHeight: '90px',
           justifyContent: headerHeight > 20 ? 'center' : 'flex-start',
           paddingTop: '16px',
@@ -99,21 +67,22 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           paddingLeft: '16px',
           paddingRight: '16px',
           zIndex: 100,
-          overflow: 'hidden',
-          transition: 'height 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), gap 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          willChange: 'height'
+          overflow: 'hidden'
         }}
       >
-        {/* Video container - scales down gradually using transform for better performance */}
+        {/* Video container - scales down gradually */}
         <div
           className="flex items-center justify-center"
           style={{
-            width: '80%',
-            maxWidth: '800px',
-            transform: `scale(${logoScale})`,
-            transformOrigin: 'center center',
-            transition: 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            willChange: 'transform'
+            width: (() => {
+              // Calculate gradual scaling from 80% to 60px
+              const progress = (headerHeight - 9) / (100 - 9) // 0 to 1
+              if (progress > 0.2) {
+                return `${Math.max(20, progress * 80)}%`
+              }
+              return '60px'
+            })(),
+            transition: 'width 0.1s linear'
           }}
         >
           <video
@@ -122,9 +91,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
             loop
             playsInline
             className="object-contain w-full"
-            style={{
-              display: 'block'
-            }}
+            style={{ opacity: headerHeight <= 9 ? 0.6 : 0.8, transition: 'opacity 0.3s ease-out' }}
           >
             <source src={introVideo} type="video/mp4" />
           </video>
@@ -135,9 +102,8 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           className="text-center"
           style={{
             opacity: textOpacity,
-            pointerEvents: textOpacity < 0.2 ? 'none' : 'auto',
-            transition: 'opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            willChange: 'opacity'
+            pointerEvents: textOpacity < 0.1 ? 'none' : 'auto',
+            transition: 'opacity 0.1s linear'
           }}
         >
           <GradientText
@@ -156,13 +122,29 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           </p>
         </div>
 
-    
+        {/* Scroll Indicator - fades out */}
+        <div
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+          style={{
+            opacity: textOpacity,
+            pointerEvents: textOpacity < 0.1 ? 'none' : 'auto',
+            transition: 'opacity 0.1s linear'
+          }}
+        >
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="w-6 h-10 border-2 border-white rounded-full flex items-start justify-center p-2"
+          >
+            <div className="w-1.5 h-1.5 bg-white rounded-full" />
+          </motion.div>
+        </div>
       </section>
 
       {/* SECTION 2: 300vh tall section - creates scroll distance */}
-      <section ref={section2Ref} style={{ height: '220vh', width: '100%' }}>
+      <section ref={section2Ref} style={{ height: '280vh', width: '100%' }}>
         {/* Centered wrapper - constrains max width */}
-        <div style={{ width: '100%', maxWidth: '420px', margin: '0 auto', height: '200vh' }}>
+        <div style={{ width: '100%', maxWidth: '420px', margin: '0 auto', height: '220vh' }}>
           {/* Sticky container - 80vh tall, sticks to top during scroll */}
           <div style={{ position: 'sticky', top: 0, width: '100%', height: '100vh', zIndex: 1 }}>
             <PlaceholderModel
