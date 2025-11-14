@@ -119,12 +119,24 @@ export default function Model({
   const mixerRef = useRef<THREE.AnimationMixer | null>(null)
 
   // Convert database path to actual asset path
-  // Database: /models/iluma-i-prime.glb -> Assets: /src/assets/models/iluma-i-prime.glb
-  let effectiveModelUrl = '/src/assets/models/sample3d.glb' // fallback
+  // Database stores: /models/iluma-i-prime.glb
+  // Public folder: /models/iluma-i-prime.glb (served as-is by Vite)
+  // Models are in public/models/ and served directly without processing
+
+  // Get the base URL for assets (models are in public folder)
+  const getAssetUrl = (path: string): string => {
+    // If path already has /models/, use it as-is
+    if (path.startsWith('/models/')) {
+      return path
+    }
+    // Otherwise, add /models/ prefix
+    return `/models/${path}`
+  }
+
+  let effectiveModelUrl = getAssetUrl('sample3d.glb') // fallback
 
   if (modelUrl) {
-    // If database has /models/..., convert to /src/assets/models/...
-    effectiveModelUrl = modelUrl.replace('/models/', '/src/assets/models/')
+    effectiveModelUrl = getAssetUrl(modelUrl)
   }
 
   // Load the GLTF model with animations
@@ -256,6 +268,8 @@ export default function Model({
   )
 }
 
-// Preload models for better performance
-useGLTF.preload('/src/assets/models/sample3d.glb')
-useGLTF.preload('/src/assets/models/iluma-i-prime.glb')
+// Preload models for better performance (now in public folder)
+useGLTF.preload('/models/sample3d.glb')
+useGLTF.preload('/models/iluma-i-prime.glb')
+useGLTF.preload('/models/iluma-i.glb')
+useGLTF.preload('/models/iluma-i-one.glb')

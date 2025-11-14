@@ -30,14 +30,15 @@ NFC Experience is a responsive web application that provides interactive product
 /Requirements/        - Project documentation
   vision.md          - Original project vision
   prd.md             - Full product requirements (v2.0 - MAJOR UPDATE)
+/public/             - Static assets served as-is (not processed by Vite)
+  /models/           - 3D models (GLTF/GLB) - served directly
 /src/
   /components/       - React components
   /pages/            - Route pages
   /lib/              - Utilities and helpers
   /hooks/            - Custom React hooks
   /styles/           - Global styles and Tailwind config
-  /assets/           - Static assets
-    /models/         - 3D models (GLTF/GLB)
+  /assets/           - Bundled static assets (videos, images)
   /locales/          - Translation files
     /en/             - English translations
     /fr/             - French translations
