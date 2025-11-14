@@ -18,6 +18,7 @@
  */
 
 import ProductShowcase from './ProductShowcase'
+import { getPublicAssetUrl } from '../lib/assetUrl'
 
 // Figma asset URLs (valid for 7 days from generation)
 const assets = {
@@ -36,14 +37,14 @@ const assets = {
 export default function ProductShowcaseExample() {
   return (
     <ProductShowcase
-      logoUrl="/lelogo.png"
+      logoUrl={getPublicAssetUrl('/lelogo.png')}
       heroImageUrl={assets.heroImage}
       partnerName="Seletti"
       partnerDescription="Seletti transforms ordinary objects into extraordinary pieces that bring humor, charm and bold aesthetic to everyday life."
       galleryImages={assets.galleryImages}
-      productRenderUrl="/still_001.png"
-      largeImageUrl="/devices.png"
-      taglineImageUrl="/foreverCurious.png"
+      productRenderUrl={getPublicAssetUrl('/still_001.png')}
+      largeImageUrl={getPublicAssetUrl('/devices.png')}
+      taglineImageUrl={getPublicAssetUrl('/foreverCurious.png')}
       closingText="Whichever you choose, you're stepping into a world where every detail waits to be discovered."
       primaryCtaText="Registration"
       primaryCtaLink="/register"

@@ -85,6 +85,7 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { MotionValue } from 'framer-motion'
+import { getPublicAssetUrl } from '../../lib/assetUrl'
 
 // Helper function to convert degrees to radians
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180
@@ -125,12 +126,12 @@ export default function Model({
 
   // Get the base URL for assets (models are in public folder)
   const getAssetUrl = (path: string): string => {
-    // If path already has /models/, use it as-is
+    // If path already has /models/, use it with base URL
     if (path.startsWith('/models/')) {
-      return path
+      return getPublicAssetUrl(path)
     }
-    // Otherwise, add /models/ prefix
-    return `/models/${path}`
+    // Otherwise, add /models/ prefix and base URL
+    return getPublicAssetUrl(`/models/${path}`)
   }
 
   let effectiveModelUrl = getAssetUrl('sample3d.glb') // fallback
@@ -269,7 +270,7 @@ export default function Model({
 }
 
 // Preload models for better performance (now in public folder)
-useGLTF.preload('/models/sample3d.glb')
-useGLTF.preload('/models/iluma-i-prime.glb')
-useGLTF.preload('/models/iluma-i.glb')
-useGLTF.preload('/models/iluma-i-one.glb')
+useGLTF.preload(getPublicAssetUrl('/models/sample3d.glb'))
+useGLTF.preload(getPublicAssetUrl('/models/iluma-i-prime.glb'))
+useGLTF.preload(getPublicAssetUrl('/models/iluma-i.glb'))
+useGLTF.preload(getPublicAssetUrl('/models/iluma-i-one.glb'))

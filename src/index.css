@@ -2,22 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* IQOS Font Faces */
-@font-face {
-  font-family: 'IQOS';
-  src: url('/IQOSW10-Regular.woff') format('woff');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'IQOS';
-  src: url('/IQOSW10-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+/* IQOS Font Faces are loaded dynamically via loadFonts() in main.tsx
+   to ensure correct base path for GitHub Pages deployment */
 
 :root {
   /* Campaign Theme Colors (dynamically set based on cc parameter) */

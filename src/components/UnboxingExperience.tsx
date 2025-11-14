@@ -5,6 +5,7 @@ import PlaceholderModel from './3d/PlaceholderModel'
 import ProductShowcaseExample from './ProductShowcaseExample'
 import GradientText from './GradientText'
 import introVideo from '../assets/intro-logo-melted.mp4'
+import { getPublicAssetUrl } from '../lib/assetUrl'
 
 interface UnboxingExperienceProps {
   unitData: UnitWithRelations
@@ -189,7 +190,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
             <img
-              src="/prize.png"
+              src={getPublicAssetUrl('/prize.png')}
               alt="IQOS x Seletti Limited Edition Organizer"
               className="h-auto object-contain"
               style={{ width: '80%' }}

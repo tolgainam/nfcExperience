@@ -15,6 +15,7 @@
 
 import { motion } from 'framer-motion'
 import type { UnitWithRelations } from '../types/database'
+import { getPublicAssetUrl } from '../lib/assetUrl'
 
 interface SupportHubProps {
   unitData?: UnitWithRelations
@@ -30,7 +31,7 @@ export default function SupportHub(_props: SupportHubProps) {
         {/* Product Image with built-in gradient */}
         <div className="absolute inset-0" style={{ zIndex: 1 }}>
           <img
-            src="/still_002.jpg"
+            src={getPublicAssetUrl('/still_002.jpg')}
             alt="IQOS ILUMA i"
             className="w-full h-full object-cover"
           />
@@ -57,7 +58,7 @@ export default function SupportHub(_props: SupportHubProps) {
             }}
           >
             <img
-              src="/lelogo.png"
+              src={getPublicAssetUrl('/lelogo.png')}
               alt="Seletti Limited Edition"
               className="w-full h-auto object-contain"
               style={{ opacity: 0.9 }}
@@ -122,7 +123,7 @@ export default function SupportHub(_props: SupportHubProps) {
           {/* Product Image */}
           <div style={{ width: '100%', maxWidth: '244px', position: 'relative' }}>
             <img
-              src="/prize.png"
+              src={getPublicAssetUrl('/prize.png')}
               alt="IQOS x Seletti Organizer"
               style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
             />
@@ -275,7 +276,7 @@ export default function SupportHub(_props: SupportHubProps) {
           {/* Product Image */}
           <div style={{ width: '100%', maxWidth: '244px', position: 'relative' }}>
             <img
-              src="/prize.png"
+              src={getPublicAssetUrl('/prize.png')}
               alt="IQOS x Seletti Organizer"
               style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
             />
