@@ -1,73 +1,114 @@
-# React + TypeScript + Vite
+# NFC Experience
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive NFC-activated product experience web application with 3D models, scroll animations, and campaign-based theming.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Build Tool**: Vite 5+
+- **Framework**: React 18+ with TypeScript
+- **Routing**: React Router v6
+- **Styling**: Tailwind CSS
+- **3D**: React Three Fiber + Drei
+- **Animation**: Framer Motion, GSAP
+- **Database**: Supabase
+- **Internationalization**: react-i18next (EN/FR)
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
 
-## Expanding the ESLint configuration
+- Node.js 20+
+- npm
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Install dependencies
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Create environment file
+cp .env.example .env.local
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Environment Variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Create a `.env.local` file with your Supabase credentials:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
+
+### Development
+
+```bash
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Run linter
+npm run lint
+```
+
+## GitHub Actions CI/CD
+
+This project uses GitHub Actions for automatic builds on every push and pull request.
+
+### Setup GitHub Secrets
+
+To enable automatic builds, add the following secrets to your GitHub repository:
+
+1. Go to your repository on GitHub
+2. Navigate to **Settings** → **Secrets and variables** → **Actions**
+3. Click **New repository secret** and add:
+   - `VITE_SUPABASE_URL`: Your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+
+### Workflow
+
+The CI/CD pipeline (`.github/workflows/ci.yml`) automatically:
+- Installs dependencies
+- Runs ESLint
+- Builds the project
+- Uploads build artifacts (retained for 7 days)
+
+## Project Structure
+
+```
+/Requirements/        - Project documentation
+/src/
+  /components/       - React components
+  /pages/            - Route pages
+  /lib/              - Utilities and helpers
+  /assets/           - Static assets
+    /models/         - 3D models (GLTF/GLB)
+  /locales/          - Translation files
+```
+
+## URL Structure
+
+```
+/:lang/product/:BRAND?type=:type&cc=:cc&prd=:prd&uid=:uid
+```
+
+Example: `/en/product/IQOS?type=d&cc=101&prd=1001&uid=789456`
+
+- `lang`: Language (en, fr)
+- `BRAND`: Brand name (IQOS, VEEV, ZYN)
+- `type`: Product type (d=device, f=flavour, a=accessory)
+- `cc`: Campaign code (controls theme/colors)
+- `prd`: Product code
+- `uid`: Unique unit identifier
+
+## Documentation
+
+See `/Requirements/prd.md` for full product requirements and `CLAUDE.md` for development guidelines.
+
+## License
+
+Private project
