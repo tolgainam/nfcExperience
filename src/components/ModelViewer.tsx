@@ -114,8 +114,3 @@ export default function ModelViewer({
     </div>
   )
 }
-
-// Preload model for better performance
-export function preloadModel(url: string) {
-  useGLTF.preload(url)
-}

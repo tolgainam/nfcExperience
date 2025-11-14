@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { motion, useScroll } from 'framer-motion'
-import { useTranslation } from 'react-i18next'
 import type { UnitWithRelations } from '../types/database'
 import PlaceholderModel from './3d/PlaceholderModel'
 import ProductShowcaseExample from './ProductShowcaseExample'
@@ -12,9 +11,7 @@ interface UnboxingExperienceProps {
 }
 
 export default function UnboxingExperience({ unitData }: UnboxingExperienceProps) {
-  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
-  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null)
 
   // Section 1 scroll animation states
   const [headerHeight, setHeaderHeight] = useState(100)
@@ -49,11 +46,6 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
 
     return () => unsubscribe()
   }, [scrollY])
-
-  // Handle card visibility changes
-  const handleCardInView = (cardIndex: number | null) => {
-    setActiveCardIndex(cardIndex)
-  }
 
   return (
     <div ref={containerRef} style={{ background: '#0a0a0a', width: '100%' }}>

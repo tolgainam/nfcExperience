@@ -93,10 +93,11 @@
  * - Optimize 3D models (< 5MB recommended)
  */
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import * as THREE from 'three'
+import { MotionValue } from 'framer-motion'
 import Model from './Model'
 import AnimatedCamera from './AnimatedCamera'
 import SpotLightWithTarget from './SpotLightWithTarget'
@@ -104,7 +105,7 @@ import SpotLightWithTarget from './SpotLightWithTarget'
 interface PlaceholderModelProps {
   campaignColor: string
   modelUrl?: string
-  scrollYProgress: any
+  scrollYProgress: MotionValue<number>
   modelScale?: number
   modelPositionX?: number
   modelPositionY?: number
@@ -126,18 +127,11 @@ export default function PlaceholderModel({
   modelRotationY,
   modelRotationZ
 }: PlaceholderModelProps) {
-  const [frameInfo, setFrameInfo] = useState({ frame: 0, total: 0, time: 0, duration: 0 })
-  const [scrollValue, setScrollValue] = useState(0)
-
-  const handleFrameUpdate = (frame: number, totalFrames: number, time: number, duration: number) => {
-    setFrameInfo({ frame, total: totalFrames, time, duration })
-  }
-
   // Track scroll progress for debugging
   useEffect(() => {
     if (scrollYProgress) {
-      const unsubscribe = scrollYProgress.on('change', (latest: number) => {
-        setScrollValue(latest)
+      const unsubscribe = scrollYProgress.on('change', () => {
+        // Scroll tracking can be added here if needed
       })
       return () => unsubscribe()
     }
@@ -224,7 +218,6 @@ export default function PlaceholderModel({
             modelRotationX={modelRotationX}
             modelRotationY={modelRotationY}
             modelRotationZ={modelRotationZ}
-            onFrameUpdate={handleFrameUpdate}
           />
         </Suspense>
       </Canvas>

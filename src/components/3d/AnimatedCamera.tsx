@@ -35,9 +35,10 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
+import { MotionValue } from 'framer-motion'
 
 interface AnimatedCameraProps {
-  scrollYProgress: any
+  scrollYProgress: MotionValue<number>
 }
 
 export default function AnimatedCamera({ scrollYProgress }: AnimatedCameraProps) {

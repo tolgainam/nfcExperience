@@ -84,6 +84,7 @@ import { useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+import { MotionValue } from 'framer-motion'
 
 // Helper function to convert degrees to radians
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180
@@ -91,7 +92,7 @@ const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180
 interface ModelProps {
   modelUrl?: string
   campaignColor: string
-  scrollYProgress: any
+  scrollYProgress: MotionValue<number>
   modelScale?: number
   modelPositionX?: number
   modelPositionY?: number
@@ -104,7 +105,6 @@ interface ModelProps {
 
 export default function Model({
   modelUrl,
-  campaignColor,
   scrollYProgress,
   modelScale = 10,
   modelPositionX = 0,
@@ -115,8 +115,8 @@ export default function Model({
   modelRotationZ = 0,
   onFrameUpdate
 }: ModelProps) {
-  const groupRef = useRef<any>(null)
-  const mixerRef = useRef<any>(null)
+  const groupRef = useRef<THREE.Group>(null)
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null)
 
   // Convert database path to actual asset path
   // Database: /models/iluma-i-prime.glb -> Assets: /src/assets/models/iluma-i-prime.glb
@@ -140,13 +140,13 @@ export default function Model({
       position: { x: modelPositionX, y: modelPositionY, z: modelPositionZ },
       rotation: { x: modelRotationX, y: modelRotationY, z: modelRotationZ }
     })
-  }, [])
+  }, [modelScale, modelPositionX, modelPositionY, modelPositionZ, modelRotationX, modelRotationY, modelRotationZ])
 
   // Initialize scene and animation mixer when loaded (only once)
   useEffect(() => {
     if (!initializedRef.current && scene && animations) {
       // Enable shadow casting
-      scene.traverse((child: any) => {
+      scene.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true
           child.receiveShadow = true
@@ -159,7 +159,7 @@ export default function Model({
         mixerRef.current = mixer
 
         // Create actions for manual time control
-        animations.forEach((clip: any) => {
+        animations.forEach((clip) => {
           const action = mixer.clipAction(clip)
           action.setLoop(THREE.LoopOnce, 1)
           action.clampWhenFinished = true
@@ -187,7 +187,7 @@ export default function Model({
   }, [scene, animations])
 
   // Update animation based on scroll progress
-  useFrame((state) => {
+  useFrame(() => {
     if (groupRef.current) {
       // Static rotation from database (convert degrees to radians)
       groupRef.current.rotation.x = degreesToRadians(modelRotationX)
@@ -204,7 +204,7 @@ export default function Model({
 
         if (actions && actions.length > 0) {
           // Control ALL animations (not just first)
-          actions.forEach((action: any) => {
+          actions.forEach((action) => {
             if (action && action.getClip()) {
               const clip = action.getClip()
               const duration = clip.duration

@@ -4,7 +4,7 @@ import type { UnitWithRelations } from '../types/database'
 
 interface UnboxingContentCardsProps {
   unitData: UnitWithRelations
-  t: (key: string, options?: any) => string
+  t: (key: string, options?: Record<string, unknown>) => string
   onCardInView?: (cardIndex: number | null) => void
 }
 

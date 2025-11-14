@@ -70,16 +70,20 @@
 
 import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { MotionValue } from 'framer-motion'
+import * as THREE from 'three'
 
 interface AnimatedPointLightProps {
-  scrollYProgress: any
+  scrollYProgress: MotionValue<number>
   basePosition: [number, number, number]
   animateX?: number
   animateY?: number
   animateZ?: number
   animateIntensity?: number
   baseIntensity?: number
-  [key: string]: any
+  color?: string
+  distance?: number
+  decay?: number
 }
 
 export function AnimatedPointLight({
@@ -90,9 +94,11 @@ export function AnimatedPointLight({
   animateZ = 0,
   animateIntensity = 0,
   baseIntensity = 0,
-  ...props
+  color,
+  distance,
+  decay
 }: AnimatedPointLightProps) {
-  const ref = useRef<any>(null)
+  const ref = useRef<THREE.PointLight>(null)
 
   useFrame(() => {
     if (ref.current && scrollYProgress) {
@@ -104,11 +110,11 @@ export function AnimatedPointLight({
     }
   })
 
-  return <pointLight ref={ref} position={basePosition} intensity={baseIntensity} {...props} />
+  return <pointLight ref={ref} position={basePosition} intensity={baseIntensity} color={color} distance={distance} decay={decay} />
 }
 
 interface AnimatedSpotLightProps {
-  scrollYProgress: any
+  scrollYProgress: MotionValue<number>
   basePosition: [number, number, number]
   baseTargetPosition: [number, number, number]
   animateX?: number
@@ -119,7 +125,12 @@ interface AnimatedSpotLightProps {
   animateTargetZ?: number
   animateIntensity?: number
   baseIntensity?: number
-  [key: string]: any
+  color?: string
+  angle?: number
+  penumbra?: number
+  distance?: number
+  decay?: number
+  castShadow?: boolean
 }
 
 export function AnimatedSpotLight({
@@ -134,9 +145,13 @@ export function AnimatedSpotLight({
   animateTargetZ = 0,
   animateIntensity = 0,
   baseIntensity = 0,
-  ...props
+  color,
+  angle,
+  penumbra,
+  distance,
+  decay
 }: AnimatedSpotLightProps) {
-  const [light, setLight] = useState<any>()
+  const [light, setLight] = useState<THREE.SpotLight | null>(null)
 
   useFrame(() => {
     if (light && scrollYProgress) {
@@ -172,7 +187,11 @@ export function AnimatedSpotLight({
         shadow-camera-near={0.1}
         shadow-camera-far={20}
         shadow-camera-fov={50}
-        {...props}
+        color={color}
+        angle={angle}
+        penumbra={penumbra}
+        distance={distance}
+        decay={decay}
       />
       {light && <primitive object={light.target} position={baseTargetPosition} />}
     </>

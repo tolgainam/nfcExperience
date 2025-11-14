@@ -85,7 +85,6 @@ export default function ProductShowcase({
   closingText,
   primaryCtaText,
   primaryCtaLink,
-  primaryCtaFullWidth = false,
   secondaryCtaText,
   secondaryCtaLink,
   secondaryCtaFullWidth = false,

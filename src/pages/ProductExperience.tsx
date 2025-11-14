@@ -9,6 +9,15 @@ import SupportHub from '../components/SupportHub'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { UnitWithRelations } from '../types/database'
 
+interface SettingRow {
+  value: string
+}
+
+interface ScanDataRow {
+  scan_count: number
+  first_scan_at: string
+}
+
 export default function ProductExperience() {
   const { lang, brand } = useParams<{ lang: string; brand: string }>()
   const [searchParams] = useSearchParams()
@@ -54,7 +63,7 @@ export default function ProductExperience() {
           .eq('key', 'pre_registration_required')
           .maybeSingle()
 
-        const preRegRequired = (preRegSetting as any)?.value === 'true'
+        const preRegRequired = (preRegSetting as SettingRow | null)?.value === 'true'
 
         // Handle unit data based on pre-registration mode
         if (preRegRequired) {
@@ -117,7 +126,7 @@ export default function ProductExperience() {
           .eq('key', 'scan_cooldown_seconds')
           .maybeSingle()
 
-        const cooldownSeconds = cooldownSetting ? parseInt((cooldownSetting as any).value, 10) : 300 // Default: 300s = 5min
+        const cooldownSeconds = cooldownSetting ? parseInt((cooldownSetting as SettingRow).value, 10) : 300 // Default: 300s = 5min
 
         // Check scan history (UID-only approach - no fingerprinting)
         const { data: scanData } = await supabase
@@ -129,9 +138,9 @@ export default function ProductExperience() {
         // Determine if this is first scan with cooldown period check
         let isFirstTime = !scanData
 
-        if (scanData && (scanData as any).first_scan_at) {
+        if (scanData && (scanData as ScanDataRow).first_scan_at) {
           // Check if cooldown period has passed
-          const firstScanTime = new Date((scanData as any).first_scan_at).getTime()
+          const firstScanTime = new Date((scanData as ScanDataRow).first_scan_at).getTime()
           const now = new Date().getTime()
           const secondsPassed = (now - firstScanTime) / 1000
 
@@ -153,7 +162,7 @@ export default function ProductExperience() {
             const { error: updateError } = await supabase
               .from('scans')
               .update({
-                scan_count: ((scanData as any).scan_count || 0) + 1,
+                scan_count: ((scanData as ScanDataRow).scan_count || 0) + 1,
                 last_scan_at: new Date().toISOString(),
               })
               .eq('uid', params.uid)

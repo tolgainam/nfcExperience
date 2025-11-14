@@ -15,32 +15,8 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import type { UnitWithRelations } from '../types/database'
 
-interface SupportHubProps {
-  unitData: UnitWithRelations
-}
-
-export default function SupportHub({ unitData }: SupportHubProps) {
-  // Animation variants for fade in from left
-  const fadeInLeft = {
-    hidden: { opacity: 0, x: -30 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.8, ease: 'easeOut' }
-    }
-  }
-
-  // Animation variants for fade in from right
-  const fadeInRight = {
-    hidden: { opacity: 0, x: 30 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.8, ease: 'easeOut' }
-    }
-  }
+export default function SupportHub() {
 
   return (
     <div style={{ background: '#0a0a0a', width: '100%', minHeight: '100vh' }}>
