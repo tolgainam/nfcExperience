@@ -49,7 +49,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
   }, [scrollY])
 
   return (
-    <div ref={containerRef} style={{ background: '#0a0a0a', width: '100%' }}>
+    <div ref={containerRef} style={{ background: '#000', width: '100%' }}>
 
       {/* SECTION 1: Landing Section - Transforms into sticky header */}
       <section
@@ -57,7 +57,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
         style={{
           position: 'sticky',
           top: '0',
-          background: '#0a0a0a',
+          background: '',
           gap: headerHeight > 20 ? '32px' : '0',
           height: `${Math.max(headerHeight, 9)}vh`,
           minHeight: '90px',
@@ -122,23 +122,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           </p>
         </div>
 
-        {/* Scroll Indicator - fades out */}
-        <div
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-          style={{
-            opacity: textOpacity,
-            pointerEvents: textOpacity < 0.1 ? 'none' : 'auto',
-            transition: 'opacity 0.1s linear'
-          }}
-        >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-6 h-10 border-2 border-white rounded-full flex items-start justify-center p-2"
-          >
-            <div className="w-1.5 h-1.5 bg-white rounded-full" />
-          </motion.div>
-        </div>
+      
       </section>
 
       {/* SECTION 2: 300vh tall section - creates scroll distance */}
