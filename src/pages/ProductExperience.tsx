@@ -159,9 +159,9 @@ export default function ProductExperience() {
         try {
           if (scanData) {
             // Update existing scan
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { error: updateError } = await (supabase
-              .from('scans') as any)
+            const { error: updateError } = await supabase
+              .from('scans')
+              // @ts-expect-error - scans table not in generated types
               .update({
                 scan_count: ((scanData as ScanDataRow).scan_count || 0) + 1,
                 last_scan_at: new Date().toISOString(),
@@ -175,9 +175,9 @@ export default function ProductExperience() {
             }
           } else {
             // Insert new scan
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { error: insertError } = await (supabase
-              .from('scans') as any)
+            const { error: insertError } = await supabase
+              .from('scans')
+              // @ts-expect-error - scans table not in generated types
               .insert({
                 uid: params.uid,
                 scan_count: 1,

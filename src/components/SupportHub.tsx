@@ -17,10 +17,11 @@ import { motion } from 'framer-motion'
 import type { UnitWithRelations } from '../types/database'
 
 interface SupportHubProps {
-  unitData: UnitWithRelations
+  unitData?: UnitWithRelations
 }
 
-export default function SupportHub({ unitData: _unitData }: SupportHubProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function SupportHub(_props: SupportHubProps) {
 
   return (
     <div style={{ background: '#0a0a0a', width: '100%', minHeight: '100vh' }}>
