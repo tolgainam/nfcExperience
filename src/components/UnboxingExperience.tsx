@@ -65,7 +65,7 @@ export default function UnboxingExperience({ unitData }: UnboxingExperienceProps
           gap: headerHeight > 20 ? '32px' : '0',
           height: `${Math.max(headerHeight, 9)}vh`,
           minHeight: '90px',
-          justifyContent: headerHeight > 20 ? 'center' : 'flex-start',
+          justifyContent: 'center',
           paddingTop: '16px',
           paddingBottom: '16px',
           paddingLeft: '16px',
